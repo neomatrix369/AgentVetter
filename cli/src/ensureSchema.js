@@ -140,7 +140,14 @@ export async function applySchema({
   }
 
   const sql = readFileSync(schemaPath(), 'utf8');
-  const client = new ClientImpl({ connectionString: url, ssl: pgSslConfig(url) });
+  // Supabase direct db.<ref> hosts are often IPv6-only; without a connect
+  // timeout a blackholed IPv4/Cloudflare path hangs forever in bootstrap.
+  const connectTimeoutMs = Number(process.env.PGCONNECT_TIMEOUT_MS || 20000);
+  const client = new ClientImpl({
+    connectionString: url,
+    ssl: pgSslConfig(url),
+    connectionTimeoutMillis: Number.isFinite(connectTimeoutMs) ? connectTimeoutMs : 20000,
+  });
   try {
     await client.connect();
     await client.query(sql);

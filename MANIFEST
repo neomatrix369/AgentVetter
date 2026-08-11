@@ -1,0 +1,45 @@
+REPO agentvetter
+LOAD common.yaml v1.0.0.yaml latest.yaml
+
+ENV prod
+ENTRY prod:agentvetter/prod
+
+# User-provided secrets for full Live AgentVetter (kebab-case only).
+# Entity-generated (do NOT list): supabase-db-password, supabase-anon-key, supabase-service-key.
+# Tier 1 (MVL): Supabase + Modal.
+SECRET supabase-api-token
+SECRET supabase-organization-id
+SECRET modal-token-id
+SECRET modal-token-secret
+# Tier 2 (full coverage): scanner engines.
+SECRET snyk-token
+SECRET tessl-token
+SECRET tessl-workspace
+SECRET skill-scanner-llm-api-key
+SECRET skill-scanner-llm-model
+SECRET skill-scanner-llm-provider
+SECRET skill-scanner-llm-base-url
+SECRET skill-scanner-llm-api-version
+SECRET mcp-scanner-llm-api-key
+SECRET mcp-scanner-llm-model
+SECRET mcp-scanner-llm-base-url
+SECRET mcp-scanner-llm-api-version
+SECRET ai-defense-api-key
+SECRET ai-defense-api-url
+SECRET mcp-scanner-api-key
+SECRET mcp-scanner-endpoint
+# Tier 3 (optional pass-through, ADR-0001): SIE router, Model Studio, Ossprey.
+SECRET sie-endpoint
+SECRET sie-api-key
+SECRET sie-model
+SECRET dashscope-api-key
+SECRET alibaba-openai-base-url
+SECRET model-studio-model
+SECRET ossprey-api-key
+
+# Bootstrap image: Node + python/modal CLI + baked scripts/sandbox (no blob mounts).
+IMAGE agentvetter-bootstrap:latest agentvetter/bootstrap,agentvetter/bootstrap-v1 . bootstrap/Dockerfile
+
+# Static Live dashboard assets (schema/Modal no longer need cli/db/scripts blobs).
+BLOBS dashboard:prototypes/dc-dashboard
+BLOBSIGNORE **/node_modules/** **/test/** **/tests/** **/eslint*
