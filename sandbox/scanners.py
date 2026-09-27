@@ -20,6 +20,9 @@ import subprocess
 import tempfile
 import threading
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
 from datetime import UTC, datetime
 
 SCAN_TIMEOUT = 240  # leaves headroom under the sandbox's 300s hard timeout
@@ -2609,10 +2612,10 @@ def _run_cargo_audit_group(workdir, item_type, target):
 # adapter MUST disambiguate — a finding is emitted only on a POSITIVE malware
 # signal (a malicious OSSBOM entry, or an unambiguous verdict line). exit 1 with
 # no such signal is a scan failure → unreachable, never a phantom red finding.
-# Tail budget: DEPSHIELD_TIMEOUT + CARGO_AUDIT_TIMEOUT + OSSPREY_TIMEOUT must
-# stay <= SCAN_TIMEOUT; see scripts/check-scanner-timeout-budget.sh and
+# Tail budget: DEPSHIELD_TIMEOUT + CARGO_AUDIT_TIMEOUT + PRESEND_TIMEOUT +
+# OSSPREY_TIMEOUT must stay <= SCAN_TIMEOUT; see scripts/check-scanner-timeout-budget.sh and
 # docs/ARCHITECTURE.md.
-OSSPREY_TIMEOUT = 90
+OSSPREY_TIMEOUT = 70  # was 90; 20s moved to PRESEND_TIMEOUT (issue #143)
 
 # RESEARCH: verdict wording UNVERIFIED. Match malware/malicious lines but skip
 # known clean-summary phrases only — never bare "not"/"clean" (false negatives).
@@ -2985,8 +2988,317 @@ def _run_ossprey_group(workdir, item_type, target):
     return findings, rows, None
 
 
+# ---- Presend (typosquat + maintainer-change signals) ------------------------
+# Opt-in adapter (issue #143). Unlike the CLI adapters above it calls a hosted
+# HTTP API in-process (see the ADR-0005 note in scanner-output-adapters.md):
+# manifests are read locally and only dependency NAMES are sent, never file
+# contents, versions or paths. Disabled unless PRESEND_API_URL is set, so no
+# name leaves the sandbox without an explicit operator decision. Both checks
+# are heuristics for manual review, so findings are amber only. Fail closed
+# (ADR-0009): any batch, package or manifest error -> unreachable, findings
+# from the batches that did complete are kept.
+PRESEND_TIMEOUT = 20  # wall clock for the whole group (tail budget)
+PRESEND_REQUEST_TIMEOUT = 10
+PRESEND_MAX_PACKAGES = 100  # per ecosystem; truncation is surfaced in detail
+PRESEND_MAINTAINER_BATCH = 20  # server-side cap of maintainer-change-check
+PRESEND_MAX_RESPONSE_BYTES = 2_000_000
+# Cloudflare rejects urllib's default User-Agent (HTTP 403, error 1010).
+PRESEND_USER_AGENT = "tripwire-presend-adapter"
+PRESEND_SOURCES = ["Presend"]
+_PRESEND_NPM_DEP_KEYS = (
+    "dependencies",
+    "optionalDependencies",
+    "peerDependencies",
+    "devDependencies",
+)
+# Specs that do not resolve to a registry package under that name.
+_PRESEND_SKIP_SPEC_PREFIXES = (
+    "file:",
+    "link:",
+    "workspace:",
+    "portal:",
+    "npm:",
+    "git:",
+    "git+",
+    "github:",
+    "http:",
+    "https:",
+)
+_PRESEND_PYPI_NAME_RE = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)")
+_PRESEND_REGISTRY_URL = {
+    "npm": "https://www.npmjs.com/package/{}",
+    "PyPI": "https://pypi.org/project/{}/",
+}
+
+
+class _PresendError(Exception):
+    """One Presend batch could not be completed."""
+
+
+def _presend_base_url():
+    """PRESEND_API_URL -> (base_url, error). Unset -> (None, None)."""
+    raw = (os.environ.get("PRESEND_API_URL") or "").strip()
+    if not raw:
+        return None, None
+    if urllib.parse.urlsplit(raw).scheme not in ("http", "https"):
+        return None, "PRESEND_API_URL must be an http(s) URL"
+    return raw.rstrip("/"), None
+
+
+def _presend_npm_names(text):
+    """Registry dependency names from package.json (runtime first); None if invalid."""
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    names = []
+    for key in _PRESEND_NPM_DEP_KEYS:
+        deps = data.get(key)
+        if not isinstance(deps, dict):
+            continue
+        for name, spec in deps.items():
+            if isinstance(spec, str) and spec.startswith(_PRESEND_SKIP_SPEC_PREFIXES):
+                continue
+            names.append(name)
+    return names
+
+
+def _presend_pypi_names(text):
+    """Project names from requirements.txt; options, URLs and paths are skipped."""
+    names = []
+    for raw in text.splitlines():
+        line = raw.split(" #", 1)[0].strip()
+        if not line or line.startswith(("#", "-")) or "://" in line or " @ " in line:
+            continue
+        match = _PRESEND_PYPI_NAME_RE.match(line)
+        if match:
+            names.append(match.group(1))
+    return names
+
+
+def _presend_collect(workdir, manifests):
+    """-> ({ecosystem: {name: manifest_relpath}}, errors); first manifest wins."""
+    found = {"npm": {}, "PyPI": {}}
+    errors = []
+    for manifest in manifests:
+        try:
+            with open(os.path.join(workdir, manifest), encoding="utf-8") as fh:
+                text = fh.read()
+        except (OSError, ValueError) as exc:
+            errors.append(f"{manifest}: unreadable ({exc})")
+            continue
+        if os.path.basename(manifest) == "package.json":
+            ecosystem, names = "npm", _presend_npm_names(text)
+        else:
+            ecosystem, names = "PyPI", _presend_pypi_names(text)
+        if names is None:
+            errors.append(f"{manifest}: invalid package.json")
+            continue
+        for name in names:
+            found[ecosystem].setdefault(name, manifest)
+    return found, errors
+
+
+def _presend_post(base_url, endpoint, payload, deadline):
+    """POST one batch; -> results list. Raises _PresendError, never anything else."""
+    remaining = deadline - time.monotonic()
+    if remaining < 1:
+        raise _PresendError(f"{endpoint}: {PRESEND_TIMEOUT}s budget exhausted")
+    request = urllib.request.Request(
+        f"{base_url}/api/{endpoint}",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json", "User-Agent": PRESEND_USER_AGENT},
+        method="POST",
+    )
+    try:
+        # Scheme restricted to http(s) by _presend_base_url.
+        with urllib.request.urlopen(  # nosec B310
+            request, timeout=min(PRESEND_REQUEST_TIMEOUT, remaining)
+        ) as response:
+            body = response.read(PRESEND_MAX_RESPONSE_BYTES + 1)
+    except urllib.error.HTTPError as exc:
+        raise _PresendError(f"{endpoint}: HTTP {exc.code}") from exc
+    except (OSError, ValueError) as exc:
+        raise _PresendError(f"{endpoint}: {exc}") from exc
+    if len(body) > PRESEND_MAX_RESPONSE_BYTES:
+        raise _PresendError(f"{endpoint}: response too large")
+    try:
+        parsed = json.loads(body)
+    except ValueError as exc:
+        raise _PresendError(f"{endpoint}: malformed JSON") from exc
+    results = parsed.get("results") if isinstance(parsed, dict) else None
+    if not isinstance(results, list) or len(results) != len(payload["packages"]):
+        raise _PresendError(f"{endpoint}: unexpected response shape")
+    return results
+
+
+def _presend_finding(category, message, package, version, manifest, ecosystem):
+    return {
+        "severity": "amber",
+        "category": category,
+        "message": message,
+        "scanner_source": "Presend",
+        "file_path": manifest,
+        "package_name": package,
+        "package_version": version,
+        "cve_ids": [],
+        "advisory_url": _PRESEND_REGISTRY_URL[ecosystem].format(package),
+        "advisory_provider": "presend",
+    }
+
+
+def _presend_typosquat_findings(result, ecosystem, manifest):
+    if result.get("suspicious") is not True:
+        return []
+    package = str(result.get("package") or "unknown")
+    similar = ", ".join(
+        str(s.get("name")) for s in result.get("similar_to") or [] if isinstance(s, dict)
+    )
+    message = (
+        f"{package}: name is close to popular {ecosystem} package(s) "
+        f"{similar or 'on the curated list'}; confirm it is the intended dependency"
+    )
+    return [_presend_finding("dependency_typosquat", message, package, None, manifest, ecosystem)]
+
+
+def _presend_maintainer_findings(result, ecosystem, manifest):
+    package = str(result.get("package") or "unknown")
+    findings = []
+    for event in result.get("flagged_events") or []:
+        if not isinstance(event, dict):
+            continue
+        version = event.get("version")
+        message = (
+            f"{package}@{version or '?'}: published by new publisher "
+            f"{event.get('publisher', '?')} after {event.get('dormancy_days', '?')} days "
+            f"without releases (previous: {event.get('previous_publisher', '?')}); "
+            "review before upgrading"
+        )
+        if event.get("publisher_check") == "unavailable":
+            message += " (publisher history lookup unavailable)"
+        findings.append(
+            _presend_finding(
+                "dependency_maintainer_change",
+                message,
+                package,
+                str(version) if version else None,
+                manifest,
+                ecosystem,
+            )
+        )
+    return findings
+
+
+def _presend_batches(ecosystem, names):
+    batches = [("typosquat-check", names)]
+    if ecosystem == "npm":  # maintainer-change-check is npm-only
+        for start in range(0, len(names), PRESEND_MAINTAINER_BATCH):
+            batches.append(
+                ("maintainer-change-check", names[start : start + PRESEND_MAINTAINER_BATCH])
+            )
+    return batches
+
+
+def _presend_run_batches(base_url, deadline, ecosystem, packages):
+    """*packages*: {name: manifest}. -> (findings, checks, errors); never raises."""
+    findings, checks, errors = [], 0, []
+    fallback_manifest = next(iter(packages.values()))
+    for endpoint, batch in _presend_batches(ecosystem, list(packages)):
+        payload = {"ecosystem": ecosystem, "packages": batch}
+        try:
+            results = _presend_post(base_url, endpoint, payload, deadline)
+        except _PresendError as exc:
+            errors.append(f"{ecosystem} {exc}")
+            continue
+        for result in results:
+            if not isinstance(result, dict) or result.get("error"):
+                errors.append(f"{ecosystem} {endpoint}: {result}"[:300])
+                continue
+            checks += 1
+            # typosquat-check may return the PEP 503 normalized PyPI name.
+            manifest = packages.get(str(result.get("package")), fallback_manifest)
+            if endpoint == "typosquat-check":
+                findings += _presend_typosquat_findings(result, ecosystem, manifest)
+            else:
+                findings += _presend_maintainer_findings(result, ecosystem, manifest)
+    return findings, checks, errors
+
+
+def _presend_check_all(base_url, packages):
+    """-> (findings, checks, errors, notes) across ecosystems; never raises."""
+    deadline = time.monotonic() + PRESEND_TIMEOUT
+    findings, checks, errors, notes = [], 0, [], []
+    for ecosystem, found in packages.items():
+        if not found:
+            continue
+        names = list(found)
+        if len(names) > PRESEND_MAX_PACKAGES:
+            notes.append(
+                f"{ecosystem}: first {PRESEND_MAX_PACKAGES} of {len(names)} "
+                "dependencies checked (runtime dependencies first)"
+            )
+        subset = {name: found[name] for name in names[:PRESEND_MAX_PACKAGES]}
+        f, c, e = _presend_run_batches(base_url, deadline, ecosystem, subset)
+        findings += f
+        checks += c
+        errors += e
+    return findings, checks, errors, notes
+
+
+def run_presend(workdir, item_type="package"):
+    """Typosquat (npm, PyPI) and maintainer-change (npm) signals via Presend.
+
+    *item_type* does not change behaviour; N/A when no npm/PyPI manifest exists.
+    """
+    source = "Presend"
+    base_url, url_error = _presend_base_url()
+    if url_error:
+        return [], [_unreachable(source, url_error)]
+    if base_url is None:
+        return [], [
+            _skipped(
+                source,
+                detail=(
+                    "PRESEND_API_URL not set: opt-in adapter "
+                    "(sends dependency names to a hosted API)"
+                ),
+            )
+        ]
+    manifests, total = _find_manifests(workdir)
+    if not manifests:
+        return [], [
+            _skipped(
+                source, "not_applicable", detail="no package.json / requirements.txt in workdir"
+            )
+        ]
+    packages, errors = _presend_collect(workdir, manifests)
+    findings, checks, batch_errors, notes = _presend_check_all(base_url, packages)
+    errors += batch_errors
+    if total > len(manifests):
+        notes.append(f"first {len(manifests)} of {total} manifests read")
+    if errors:
+        return findings, [_unreachable(source, "; ".join(errors + notes))]
+    if checks == 0:
+        return [], [
+            _skipped(source, "not_applicable", detail="manifests list no registry dependencies")
+        ]
+    row = _completed(source, checks, findings)
+    if notes:
+        row["detail"] = f"{row.get('detail', '')} — {'; '.join(notes)}"[:4000]
+    return findings, [row]
+
+
+def _run_presend_group(workdir, item_type, target):
+    """Presend group — opt-in typosquat / maintainer-change signals, no quality axis."""
+    findings, rows = run_presend(workdir, item_type)
+    return findings, rows, None
+
+
 # Ordered: skill-only groups (Cisco Skill Scanner, then Tessl), the mcp-only
 # group (Cisco MCP Scanner), then both-type groups (Snyk, DepShield, Cargo Audit,
+# Presend — opt-in via PRESEND_API_URL, the only in-process HTTP adapter, then
 # Ossprey last — the RESEARCH-grade malicious-package adapter, credential-gated).
 SCANNER_GROUPS = [
     {"sources": SKILL_SCANNER_SOURCES, "applies_to": "skill", "runner": _run_skill_scanner_group},
@@ -2995,11 +3307,13 @@ SCANNER_GROUPS = [
     {"sources": SNYK_SOURCES, "applies_to": "both", "runner": _run_snyk_group},
     {"sources": DEPSHIELD_SOURCES, "applies_to": "both", "runner": _run_depshield_group},
     {"sources": CARGO_AUDIT_SOURCES, "applies_to": "both", "runner": _run_cargo_audit_group},
+    {"sources": PRESEND_SOURCES, "applies_to": "both", "runner": _run_presend_group},
     {"sources": OSSPREY_SOURCES, "applies_to": "both", "runner": _run_ossprey_group},
 ]
 
 
-# Types that inherit ``applies_to: "both"`` groups (Snyk / DepShield / Cargo Audit / Ossprey).
+# Types that inherit ``applies_to: "both"`` groups (Snyk / DepShield / Cargo Audit /
+# Presend / Ossprey).
 _BOTH_ITEM_TYPES = frozenset({"skill", "mcp_server", "package"})
 
 
