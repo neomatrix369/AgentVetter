@@ -123,6 +123,23 @@ becomes available; leave it blank until then. Credential-free `--local` /
 `--dry-run-safe` / `--dry-run-malicious` modes exist for local testing without a
 key.
 
+## Presend — typosquat / maintainer-change signals (opt-in)
+
+The Presend adapter sends the **dependency names** found in `package.json` /
+`requirements.txt` (never versions, paths or file contents) to the hosted Presend
+API: typosquat-check (npm, PyPI) and maintainer-change-check (npm). It is the only
+scanner that sends data to a third-party HTTP API from inside the Tripwire
+process, so it is **opt-in**: leave `PRESEND_API_URL` blank and the adapter
+reports `skipped_missing_credential` without any network call.
+
+| Key | Required for | Where to get it |
+|-----|--------------|-----------------|
+| `PRESEND_API_URL` | Presend adapter (opt-in) | `https://presend.pages.dev` — no account, no key; per-IP rate limits (10 batch requests/min per endpoint) |
+
+Findings are amber only (heuristic signals for manual review). The URL is
+allowlisted in [OPTIONAL_SCANNER_KEYS.md](../../fixtures/OPTIONAL_SCANNER_KEYS.md)
+so `setup-modal.sh` syncs it into `tripwire-scan-secrets` when set.
+
 ## Optional — tiered router (SIE + Model Studio)
 
 Not required for scanner Live coverage. Required for `tripwire route` and for
@@ -169,5 +186,6 @@ vendor to the keys you need in `.env` and where to get them.
 | **Cisco Skill / MCP LLM** (scanner Tier B) | `SKILL_SCANNER_LLM_API_KEY`, `SKILL_SCANNER_LLM_MODEL`, `SKILL_SCANNER_LLM_PROVIDER`, `SKILL_SCANNER_LLM_BASE_URL`; `MCP_SCANNER_LLM_API_KEY`, `MCP_SCANNER_LLM_MODEL`, `MCP_SCANNER_LLM_BASE_URL` | Any OpenAI-compatible or Azure LLM — not the same as AI Defense cloud keys below |
 | **Cisco AI Defense** (scanner Tier C) | `AI_DEFENSE_API_KEY`, `MCP_SCANNER_API_KEY`; optional `AI_DEFENSE_API_URL`, `MCP_SCANNER_ENDPOINT` | [developer.cisco.com](https://developer.cisco.com) → AI Defense |
 | **Ossprey** (malware — access OPEN/pending) | `OSSPREY_API_KEY` (`ospy_…`) | Access not yet available — leave blank; adapter reports `skipped_missing_credential` |
+| **Presend** (supply-chain signals — opt-in) | `PRESEND_API_URL` | No key. Blank keeps it off (`skipped_missing_credential`); `https://presend.pages.dev` turns it on |
 | **SIE** (optional router) | `SIE_ENDPOINT`, `SIE_API_KEY`; optional `SIE_MODEL` | [tiered-router-setup](./tiered-router-setup.md) |
 | **Model Studio** (optional router) | `DASHSCOPE_API_KEY`, `ALIBABA_OPENAI_BASE_URL`; optional `DASHSCOPE_HOST`, `MODEL_STUDIO_MODEL`, `ALIBABA_DASH_SCOPE_API_URL` | [tiered-router-setup](./tiered-router-setup.md) |
