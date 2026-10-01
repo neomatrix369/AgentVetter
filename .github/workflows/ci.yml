@@ -183,7 +183,7 @@ jobs:
       - uses: actions/checkout@v7
       # Known-CVE gate on PR. Semgrep (patterns) + CodeQL (deep) → nightly.
       - name: OSV-Scanner (SCA)
-        uses: google/osv-scanner-action/osv-scanner-action@v2.5.1
+        uses: google/osv-scanner-action/osv-scanner-action@v2.6.0
         with:
           # Exclude intentional vuln fixtures / prototypes (parity with Trivy skip-dirs).
           # Fixture-local osv-scanner.toml also ignores vuln-dependency-lodash.
