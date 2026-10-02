@@ -102,7 +102,7 @@ cd /path/to/repo
 
 git clone https://github.com/neomatrix369/AgentVetter.git
 after_dir=$PWD
-cd agentvetter
+cd AgentVetter
 cd cli
 npm install
 npm link

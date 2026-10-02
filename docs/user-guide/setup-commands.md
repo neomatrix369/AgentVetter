@@ -47,7 +47,7 @@ Full help: `agentvetter --help` · `agentvetter scan --help`. Shim policy:
 
 ```bash
 git clone https://github.com/neomatrix369/AgentVetter.git
-cd agentvetter
+cd AgentVetter
 cd cli
 npm install
 npm link

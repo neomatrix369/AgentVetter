@@ -41,7 +41,7 @@
 | 0 (landed) | R | **71** | **Expert view + report export** | Should | ✅ landed `main` (#153) · Expert toggle + coverage/provenance export |
 | 0 (landed) | R | **69** | **Fix propose + apply-clean** | Must | ✅ landed `main` (#154) · next 70 |
 | 0 (landed) | R | **68** | **Stepper Run → Triage → Investigate** | Must | ✅ landed `main` (#152) · UI 1A workflow stepper |
-| 0 (landed) | R | **67** | **SIE judge panel + final judge** | Must | ✅ landed `main` (#151) · CLI panel + inventory; opt-in `TRIPWIRE_JUDGE_PANEL=1` |
+| 0 (landed) | R | **67** | **SIE judge panel + final judge** | Must | ✅ landed `main` (#151) · CLI panel + inventory; opt-in `AGENTVETTER_JUDGE_PANEL=1` |
 | 0 (landed) | R | **66** | **Evidence verify + injection guard** | Must | ✅ VERIFIED on `slice/66-evidence-verify-injection-guard` · next 67 |
 | 0 (landed) | R | **65** | **Language/ecosystem coverage ledger** | Must | ✅ landed `main` (#148) · next 66 |
 | 0 (active fix) | — | — | Cargo SCA honesty (N/A → UNSCANNED) | — | ✅ code VERIFIED Live on `fix/cargo-package-scan-error-status` (feeds 65 ledger; not full Cargo scan) |

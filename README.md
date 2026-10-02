@@ -33,7 +33,7 @@
 
 Meterian **Security** / **Stability** / **Licensing** badges mirror the public
 [Meterian project report](https://www.meterian.com/report/gh/neomatrix369/AgentVetter)
-(dependency and policy scan for this GitHub repo — not a AgentVetter scan adapter).
+(dependency and policy scan for this GitHub repo — not an AgentVetter scan adapter).
 CI / Complexity badges reflect GitHub Actions on `main`. The **Nightly** badge is
 **A — comprehensive T4** (daily **02:00 UTC**: Semgrep, CodeQL, full secrets/Trivy,
 dashboard tests, coverage snapshots, complexity, dep audit). **B — Supply chain**
@@ -160,7 +160,7 @@ do not need a local clone, or watch the
 
 ```bash
 git clone https://github.com/neomatrix369/AgentVetter.git
-cd agentvetter
+cd AgentVetter
 node scripts/serve-dashboard.mjs
 ```
 
@@ -284,6 +284,7 @@ How to read strips and filters after Route:
 | Smoke-test SIE or Model Studio alone | [SIE sample CLI](prototypes/sie-studio/README.md) · [Model Studio sample CLI](prototypes/model-studio/README.md) |
 | Understand results and system shape | [Capability status](docs/STATUS.md) · [Architecture](docs/ARCHITECTURE.md) · [ADRs](docs/adr/README.md) |
 | Contribute or maintain | [Contributing](CONTRIBUTING.md) · [command catalog](docs/user-guide/setup-commands.md) |
+| Migrate from Tripwire | [Migration guide](docs/MIGRATION-AGENTVETTER.md) · [ADR-0018](docs/adr/0018-agentvetter-rebrand.md) |
 | Report a vulnerability | [SECURITY](SECURITY.md) |
 
 Full map (including planning / CI): [docs/README.md](docs/README.md).

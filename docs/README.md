@@ -26,6 +26,7 @@ Start here: [QUICKSTART](../QUICKSTART.md) · Repo entry: [README](../README.md)
 | Claude Code agent hooks | [agent-hooks README](../agent-hooks/README.md) | [frontline output contract](./user-guide/frontline-output-contract.md) · [CONTRIBUTING](../CONTRIBUTING.md) |
 | Contribute | [Contributing](../CONTRIBUTING.md) | [Setup and maintenance commands](./user-guide/setup-commands.md) |
 | Report a vulnerability | [SECURITY](../SECURITY.md) | — |
+| Migrate from Tripwire | [MIGRATION-AGENTVETTER.md](./MIGRATION-AGENTVETTER.md) | [ADR-0018](./adr/0018-agentvetter-rebrand.md) |
 
 ## Setup and operation
 

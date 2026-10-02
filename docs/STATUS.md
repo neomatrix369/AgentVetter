@@ -407,9 +407,10 @@ documentarist pile-on **APPROVED WITH FOLLOW-ON**; DIVIO purity rewrites
 
 **Wave H — Frontline agent hooks (2026-08-15):** **H0 governance ✅**
 (2026-09-21 — [phase-H0-governance](./plan/slices/08-H-frontline-agent-hooks/phase-H0-governance.md)).
-Claude Code PreToolUse handlers, `agentvetter setup-agent-hooks`, and five `/tw-*`
-skills landed on `main` via Phase 1 agent-hooks (see `agent-hooks/`). **Slice 28**
-(`/tw-verify` Quality `N/100` + blocked footer + Sources: Tessl Quality /
+Claude Code PreToolUse handlers, `agentvetter setup-agent-hooks`, and five `/av-*`
+skills (aliases `/tw-*`) landed on `main` via Phase 1 agent-hooks (see
+`agent-hooks/`). **Slice 28**
+(`/av-verify` / alias `/tw-verify` Quality `N/100` + blocked footer + Sources: Tessl Quality /
 Cisco+Snyk Status) is ✅ **PASSED** on `main`
 ([#118](https://github.com/neomatrix369/AgentVetter/pull/118)) — contract SSOT
 [frontline-output-contract.md](./user-guide/frontline-output-contract.md) —
@@ -504,9 +505,9 @@ remains Won't (A)):
   JSON with internal timeout budget, identifier lookup + CLI-compatible hash
   comparison, 14-day staleness window — **SUPERSEDED → on `main`** (live
   regression matrix still open)
-- Five `/tw-*` skills (`tw-verify`, `tw-scan`, `tw-enable`, `tw-disable`,
-  `tw-self-check`; repo source `agent-hooks/skills/`, installed to
-  `~/.claude/skills/`) — **SUPERSEDED → on `main`** (Quality column: slice 28)
+- Five `/av-*` skills (`av-verify`, `av-scan`, `av-enable`, `av-disable`,
+  `av-self-check`; permanent `tw-*` aliases; repo source `agent-hooks/skills/`,
+  installed to `~/.claude/skills/`) — **SUPERSEDED → on `main`** (Quality column: slice 28)
 - `agentvetter setup-agent-hooks` installer (preflight, `~/.agentvetter/config.json`
   init, handler install, env pre-warm, `~/.claude/settings.json` JSON-merge,
   skill copy, bootstrap scan sweep) — **SUPERSEDED → on `main`**
@@ -539,7 +540,7 @@ Known fixture gaps (not urgent) are listed under
 as shipped capabilities. Guard PreToolUse and Drift/trend remain Future /
 Won't (A) for the Horizon A ship path — see
 [ADR-0015](./adr/0015-horizon-a-excludes-guard-and-drift.md). Frontline Guard
-Phase 1 (hooks + `/tw-*` skills) is on `main` under `agent-hooks/`; **H0 ✅**;
+Phase 1 (hooks + `/av-*` skills, aliases `/tw-*`) is on `main` under `agent-hooks/`; **H0 ✅**;
 slice 28 Quality dual-output is ✅ **PASSED** on `main` (#118). Formal
 Wave H Must gate closures (23–27, 29–32) remain open.
 

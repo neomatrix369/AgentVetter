@@ -209,7 +209,7 @@ clock before Modal's 300s kill — operators reconcile stranded `running` rows w
   shipped production entry ([ADR-0015](./adr/0015-horizon-a-excludes-guard-and-drift.md)).
   **Wave H (Frontline):** Phase 1 hooks + `agentvetter setup-agent-hooks` + `/av-*` (aliases `/tw-*`)
   skills live under [agent-hooks](../agent-hooks/README.md) on `main`. Slice 28
-  (`/tw-verify` Quality `N/100` + blocked footer + Sources attribution) is
+  (`/av-verify` Quality `N/100` + blocked footer + Sources attribution; alias `/tw-verify`) is
   **IMPLEMENTED** on `slice/28-tw-verify-quality` — dual-output SSOT
   [frontline-output-contract.md](./user-guide/frontline-output-contract.md)
   (Quality = Tessl; Status = Cisco AI Defense + Snyk).
