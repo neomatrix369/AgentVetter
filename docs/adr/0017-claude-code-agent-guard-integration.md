@@ -154,6 +154,21 @@ Ossprey mention enters README/QUICKSTART/CONTRIBUTING/STATUS/ARCHITECTURE until
 provisioning and live verification land, consistent with the Ossprey re-mention
 gate above.
 
+## Addendum (2026-09-27): Presend adapter (proposed, issue #143)
+
+Presend joins as the **third dispatch extension**, registered after Cargo Audit
+and before Ossprey, which stays the final group. It sends dependency names read
+from `package.json` / `requirements.txt` to a hosted API for two heuristic
+signals (typosquat: npm + PyPI; new publisher after dormancy: npm) and reports
+them as amber findings only. Because it is the first adapter that sends data to
+a third party from inside the Tripwire process, it is **opt-in**: blank
+`PRESEND_API_URL` → `skipped_missing_credential`, no network call. The tail
+budget moves 20 s from `OSSPREY_TIMEOUT` (90 → 70; Ossprey cannot run until
+access lands) to `PRESEND_TIMEOUT`, keeping DepShield + Cargo Audit + Presend +
+Ossprey = 240 s = `SCAN_TIMEOUT`. Consistent with the re-mention gate above, no
+Presend mention enters README/QUICKSTART/CONTRIBUTING/STATUS/ARCHITECTURE.
+Details: [scanner-output-adapters.md](../research/adapters/scanner-output-adapters.md) §9.
+
 ## Alternatives considered
 
 ### A. Keep Guard closed; ship advisory-only skills

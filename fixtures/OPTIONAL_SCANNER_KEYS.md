@@ -30,6 +30,7 @@ placeholder token, but this is a degraded diagnostic path.
 | Cisco MCP Scanner LLM | `MCP_SCANNER_LLM_API_KEY`, `MCP_SCANNER_LLM_MODEL`, `MCP_SCANNER_LLM_BASE_URL`, `MCP_SCANNER_LLM_API_VERSION` |
 | Cisco AI Defense | `AI_DEFENSE_API_KEY`, `AI_DEFENSE_API_URL`, `MCP_SCANNER_API_KEY`, `MCP_SCANNER_ENDPOINT` |
 | Ossprey malware scan (access **OPEN** / pending) | `OSSPREY_API_KEY` |
+| Presend typosquat / maintainer-change signals (opt-in, no key) | `PRESEND_API_URL` |
 
 Scanner environment variable names stay upstream. Do not add `TRIPWIRE_*` or
 `CISCO_AI_DEFENSE_API_KEY` aliases.
@@ -42,6 +43,11 @@ for the Ossprey adapter is **[OPEN]** — no key exists in this environment
 with no further change here. Until then the value stays blank and the adapter
 reports `skipped_missing_credential` — unlike DepShield below, Ossprey *does*
 take a credential, so it uses that safe-skip path rather than being credential-free.
+
+**`PRESEND_API_URL` is a switch, not a secret.** The Presend adapter needs no
+credential, but it sends dependency names to a hosted API, so it runs only when
+this URL is set. Blank → `skipped_missing_credential` with no network call, the
+same safe-skip path as a missing key.
 
 **DepShield has no row above by design.** The DepShield adapter
 (`depshield-mcp`, baked into the Modal image) requires **no credentials**: it

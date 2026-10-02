@@ -29,7 +29,7 @@ def test_given_registry_when_inspected_then_order_and_applicability_preserved() 
     When its entries are inspected,
     Then skill groups come first (Cisco Skill Scanner then Tessl), the MCP
     group follows, and the both-type groups close the list (Snyk, DepShield,
-    Cargo Audit, then Ossprey last).
+    Cargo Audit, Presend, then Ossprey last).
     """
     ### Given / When
     groups = scanners.SCANNER_GROUPS
@@ -42,12 +42,14 @@ def test_given_registry_when_inspected_then_order_and_applicability_preserved() 
         scanners.SNYK_SOURCES,
         scanners.DEPSHIELD_SOURCES,
         scanners.CARGO_AUDIT_SOURCES,
+        scanners.PRESEND_SOURCES,
         scanners.OSSPREY_SOURCES,
     ]
     assert [g["applies_to"] for g in groups] == [
         "skill",
         "skill",
         "mcp_server",
+        "both",
         "both",
         "both",
         "both",
@@ -125,6 +127,11 @@ def test_given_package_when_run_all_then_both_groups_only_no_cisco() -> None:
         ),
         patch.object(
             scanners,
+            "_run_presend_group",
+            return_value=([], [{"scanner_source": "Presend", "status": "completed"}], None),
+        ),
+        patch.object(
+            scanners,
             "_run_ossprey_group",
             return_value=([], [{"scanner_source": "Ossprey", "status": "completed"}], None),
         ),
@@ -141,6 +148,7 @@ def test_given_package_when_run_all_then_both_groups_only_no_cisco() -> None:
         list(scanners.SNYK_SOURCES),
         list(scanners.DEPSHIELD_SOURCES),
         list(scanners.CARGO_AUDIT_SOURCES),
+        list(scanners.PRESEND_SOURCES),
         list(scanners.OSSPREY_SOURCES),
     ]
     skill_mock.assert_not_called()
@@ -175,6 +183,7 @@ def test_given_skill_when_run_all_then_skill_groups_in_order_and_mcp_skipped() -
         patch.object(scanners, "run_snyk", return_value=([], [])),
         patch.object(scanners, "run_depshield", return_value=([], [])),
         patch.object(scanners, "run_cargo_audit", return_value=([], [])),
+        patch.object(scanners, "run_presend", return_value=([], [])),
         patch.object(scanners, "run_ossprey", return_value=([], [])),
     ):
         scanners.run_all_scanners(
@@ -188,6 +197,7 @@ def test_given_skill_when_run_all_then_skill_groups_in_order_and_mcp_skipped() -
         list(scanners.SNYK_SOURCES),
         list(scanners.DEPSHIELD_SOURCES),
         list(scanners.CARGO_AUDIT_SOURCES),
+        list(scanners.PRESEND_SOURCES),
         list(scanners.OSSPREY_SOURCES),
     ]
     mcp_mock.assert_not_called()
@@ -216,6 +226,7 @@ def test_given_mcp_server_when_run_all_then_mcp_group_then_snyk_and_skill_skippe
         patch.object(scanners, "run_snyk", return_value=([], [])),
         patch.object(scanners, "run_depshield", return_value=([], [])),
         patch.object(scanners, "run_cargo_audit", return_value=([], [])),
+        patch.object(scanners, "run_presend", return_value=([], [])),
         patch.object(scanners, "run_ossprey", return_value=([], [])),
     ):
         scanners.run_all_scanners(
@@ -231,6 +242,7 @@ def test_given_mcp_server_when_run_all_then_mcp_group_then_snyk_and_skill_skippe
         list(scanners.SNYK_SOURCES),
         list(scanners.DEPSHIELD_SOURCES),
         list(scanners.CARGO_AUDIT_SOURCES),
+        list(scanners.PRESEND_SOURCES),
         list(scanners.OSSPREY_SOURCES),
     ]
     skill_mock.assert_not_called()
@@ -268,6 +280,7 @@ def test_given_fake_group_in_copied_registry_when_run_all_then_same_protocol() -
         patch.object(scanners, "run_snyk", return_value=([], [])),
         patch.object(scanners, "run_depshield", return_value=([], [])),
         patch.object(scanners, "run_cargo_audit", return_value=([], [])),
+        patch.object(scanners, "run_presend", return_value=([], [])),
         patch.object(scanners, "run_ossprey", return_value=([], [])),
     ):
         result = scanners.run_all_scanners(
@@ -311,6 +324,7 @@ def test_given_fake_skill_only_group_when_mcp_scan_then_not_run() -> None:
         patch.object(scanners, "run_snyk", return_value=([], [])),
         patch.object(scanners, "run_depshield", return_value=([], [])),
         patch.object(scanners, "run_cargo_audit", return_value=([], [])),
+        patch.object(scanners, "run_presend", return_value=([], [])),
         patch.object(scanners, "run_ossprey", return_value=([], [])),
     ):
         result = scanners.run_all_scanners("/tmp/mcp", "mcp_server", "https://example.invalid")

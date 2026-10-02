@@ -376,7 +376,74 @@ credentialed live round-trip once access lands.
 
 ---
 
-## 9. Adapter protocol (PROPOSED)
+## 9. Presend (`presend-adapter`)
+
+Hosted, free supply-chain **heuristics** from [presend.pages.dev](https://presend.pages.dev):
+name-similarity typosquat detection (npm, PyPI) and the event-stream pattern
+(a previously unseen publisher releasing after long dormancy; npm only). Not
+CVE/SCA and not malware detection. Registered after Cargo Audit and before
+Ossprey in `SCANNER_GROUPS`; **opt-in**: blank `PRESEND_API_URL` →
+`skipped_missing_credential`, no network call.
+
+**ADR-0005 note.** This is the first adapter that calls an HTTP API in-process
+instead of wrapping a CLI. [ADR-0005](../../adr/0005-upstream-scanner-cli-adapters.md)
+rejected "vendor SaaS HTTP APIs only" because the shipped engines need the target
+tree inside the sandbox. Here the tree is read locally (`_find_manifests`, same
+cap as DepShield) and only dependency **names** are sent (never versions, paths
+or file contents), so that rationale does not apply. There is no Presend CLI to wrap.
+
+### Capture (VERIFIED — live calls to `https://presend.pages.dev`, 2026-09-27)
+
+```
+POST {PRESEND_API_URL}/api/typosquat-check          {"ecosystem": "npm" | "PyPI", "packages": [<= 100 names]}
+POST {PRESEND_API_URL}/api/maintainer-change-check  {"ecosystem": "npm", "packages": [<= 20 names]}
+Headers: Content-Type: application/json + explicit User-Agent
+         (Cloudflare answers 403 / error 1010 to urllib's default User-Agent)
+```
+
+Up to 100 names per ecosystem (runtime dependencies first; truncation surfaced
+in the row detail), so at most 1 + 5 npm requests and 1 PyPI request per scan.
+`PRESEND_TIMEOUT` (20 s) bounds the whole group, 10 s per request. Server rate
+limit: 10 batch requests per minute per endpoint and client IP.
+
+### Output shape
+
+- typosquat-check (VERIFIED, same live calls): `results[]` of
+  `{package, suspicious, similar_to: [{name, distance}], is_known_popular_package, known_legitimate}`.
+  PyPI names may come back PEP 503-normalized.
+- maintainer-change-check (VERIFIED for the envelope; `flagged_events[]` fields
+  from Presend's OpenAPI description, no live positive exists today):
+  `results[]` of `{package, found, suspicious, flagged_events: [{version, publisher, published, previous_publisher, dormancy_days, reason, publisher_check}]}`.
+  A per-package failure is `{package, error}`.
+
+Mapping: `suspicious: true` → one `dependency_typosquat` finding; each
+`flagged_events[]` entry → one `dependency_maintainer_change` finding. Both are
+**amber** only (signals for manual review, never red); `advisory_provider:
+presend`, `advisory_url` = the package's registry page, `cve_ids: []`.
+Fail closed ([ADR-0009](../../adr/0009-fail-closed-incomplete-evidence.md)):
+HTTP error, 429, timeout, malformed or short response, per-package `error` or an
+unreadable manifest → `unreachable`; findings from completed batches still persist.
+
+Known limits: typosquat-check compares against a curated list of well-known
+packages (not a top-N-by-downloads feed); maintainer-change-check is npm-only and
+does not detect a hijacked existing account or a malicious release by an
+existing maintainer.
+
+### References
+
+| Source | URL | Access | Reputation | Status |
+|---|---|---|---|---|
+| API docs | https://presend.pages.dev/api | 2026-09-27 | vendor (the adapter's author develops Presend) | live-probed |
+| Issue | https://github.com/neomatrix369/tripwire/issues/143 | 2026-09-27 | project | maintainer go-ahead |
+
+**Evidence note:** response shapes were round-tripped against production on
+2026-09-27; the unit-test fixtures in `sandbox/tests/test_scanners_presend.py`
+mirror them. Egress from the Modal sandbox and the rate limit under concurrent
+scans have **not** been exercised live.
+
+---
+
+## 10. Adapter protocol (PROPOSED)
 
 ```
 run_engine(target, pinned_version) ->
@@ -389,7 +456,7 @@ Golden samples: `fixtures/scanner-samples/{engine}/{fixture-name}.json` once smo
 
 ---
 
-## 10. Work remaining
+## 11. Work remaining
 
 - [x] Seed `.nwave/trusted-source-domains.yaml`
 - [x] Inventory primary docs + pull JSON schemas for Snyk, Cisco Skill Scanner, Cisco MCP Scanner
@@ -400,6 +467,7 @@ Golden samples: `fixtures/scanner-samples/{engine}/{fixture-name}.json` once smo
 - [ ] Capture golden outputs on Tripwire fixtures
 - [ ] Storage key layout ADR one-liner
 - [ ] Ossprey: provision access (slice 35 OPEN), pin `ossprey-cli`, reconcile `scan`/`check` + OSSBOM against `--help`, confirm/drop `--json` verdict flag → then VERIFIED
+- [ ] Presend: live run from the Modal sandbox (egress, rate limit under concurrent scans) → then VERIFIED end to end
 - [ ] Mark each adapter VERIFIED after Supabase round-trip
 
 ---
@@ -412,3 +480,4 @@ Golden samples: `fixtures/scanner-samples/{engine}/{fixture-name}.json` once smo
 | 2026-08-01 | Filled Snyk / Cisco Skill Scanner / Cisco MCP Scanner field inventories from official raw docs (json-output.md, output-formats.md ×2) |
 | 2026-08-15 | Added §7 DepShield (`depshield-mcp`) — MCP-stdio invocation + report-text parse anchors, VERIFIED against live v1.0.0 run; renumbered protocol/work-remaining sections |
 | 2026-08-15 | Added §8 Ossprey (`ossprey-adapter`) — malware/malicious-code detection (not CVE), `ossprey scan <path> -o <ossbom.json>`, OSSBOM JSON + exit-code (0 clean / 1 malware-OR-failure) disambiguation, `OSSPREY_API_KEY` auth + `--local`/`--dry-run-*` credential-free modes, malware→`red`. Labeled **RESEARCH** (vendor docs only, not live-probed); credential-gated (`skipped_missing_credential`, access OPEN). Renumbered protocol §8→§9 and work-remaining §9→§10 |
+| 2026-09-27 | Added §9 Presend (`presend-adapter`) — opt-in (`PRESEND_API_URL`) hosted typosquat (npm, PyPI) + maintainer-change (npm) heuristics; names only, amber only, fail closed; first in-process HTTP adapter (ADR-0005 note). Shapes live-probed against production. Renumbered protocol §9→§10 and work-remaining §10→§11 |

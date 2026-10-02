@@ -240,6 +240,7 @@ def test_given_callback_when_run_all_then_callback_called_per_scanner_group() ->
         patch.object(scanners, "run_snyk", return_value=([], snyk_rows)),
         patch.object(scanners, "run_depshield", return_value=([], depshield_rows)),
         patch.object(scanners, "run_cargo_audit", return_value=([], cargo_rows)),
+        patch.object(scanners, "run_presend", return_value=([], [])),
         patch.object(scanners, "run_ossprey", return_value=([], ossprey_rows)),
     ):
         result = scanners.run_all_scanners(
@@ -247,9 +248,9 @@ def test_given_callback_when_run_all_then_callback_called_per_scanner_group() ->
         )
 
     ### Then
-    assert len(callback_calls) == 6, (
+    assert len(callback_calls) == 7, (
         "must call back once per scanner group "
-        "(Cisco, Tessl, Snyk, DepShield, Cargo Audit, Ossprey)"
+        "(Cisco, Tessl, Snyk, DepShield, Cargo Audit, Presend, Ossprey)"
     )
 
     assert callback_calls[0]["findings"] == cisco_findings
@@ -265,7 +266,9 @@ def test_given_callback_when_run_all_then_callback_called_per_scanner_group() ->
 
     assert callback_calls[4]["rows"] == cargo_rows
 
-    assert callback_calls[5]["rows"] == ossprey_rows
+    assert callback_calls[5]["rows"] == []
+
+    assert callback_calls[6]["rows"] == ossprey_rows
 
     assert result["overall_status"] == "complete"
     assert result["quality_score"] == 85.0
@@ -294,6 +297,7 @@ def test_given_no_callback_when_run_all_then_works_unchanged() -> None:
         ),
         patch.object(scanners, "run_depshield", return_value=([], [])),
         patch.object(scanners, "run_cargo_audit", return_value=([], [])),
+        patch.object(scanners, "run_presend", return_value=([], [])),
         patch.object(scanners, "run_ossprey", return_value=([], [])),
     ):
         result = scanners.run_all_scanners("/tmp/mcp", "mcp_server", "https://example.com")
