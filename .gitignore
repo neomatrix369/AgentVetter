@@ -63,6 +63,7 @@ tmp/
 
 cli/.stryker-tmp/
 cli/reports/
+cli/bin/agentvetter
 prototypes/model-studio/out
 .worktrees/
 
