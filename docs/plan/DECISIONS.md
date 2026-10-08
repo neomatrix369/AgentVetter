@@ -2,6 +2,7 @@
 
 | Date | Topic | Decision | Notes |
 |------|-------|----------|-------|
+| 2026-10-08 | schema/db | Drop `tripwire_rollup_item` from live Supabase + schema.sql | `DROP FUNCTION IF EXISTS tripwire_rollup_item(uuid)` run on live Supabase; `db/schema.sql` carries the idempotent DROP so `agentvetter setup --force` cleans it on older deployments. No code called the old name. PR: [#188](https://github.com/neomatrix369/AgentVetter/pull/188). VERIFIED |
 | 2026-10-03 | branding/CLI | Hard-cut prior-name CLI/config/env/docs | USER: nothing functional or live docs may use the prior product name. Drop CLI shim, config fallback, env dual-read, schema compat alias. Keep permanent `tw-*` skill aliases + immutable historical slices/gate-evidence. DECIDED / IMPLEMENTED |
 | 2026-10-02 | branding/Modal | Operator Modal cutover VERIFIED | `agentvetter-supabase` / `agentvetter-scan-secrets` + deployed `agentvetter-scan`; prior-brand app/secrets removed; `agentvetter_rollup_item` on live Supabase; smoke scan `safe-csv-cleaner` OK. Evidence: [MIGRATION-AGENTVETTER.md](../MIGRATION-AGENTVETTER.md) · STATUS VERIFIED (operator, 2026-10-02) |
 | 2026-10-03 | planning | Added slice 78 | Agent brand surfaces → AgentVetter/`av-*` primary in live skills, remedies, setup copy; permanent `tw-*` aliases retained (ADR-0018) |

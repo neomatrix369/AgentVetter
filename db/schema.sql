@@ -287,6 +287,10 @@ end;
 $$ language plpgsql;
 
 
+-- ─── Legacy cleanup ─────────────────────────────────────────────────────────
+-- Drop old tripwire-branded function that was renamed to agentvetter_rollup_item.
+drop function if exists tripwire_rollup_item(uuid);
+
 -- ─── Supabase Realtime ──────────────────────────────────────────────────────
 -- Enable Realtime publication so the browser dashboard receives INSERT/UPDATE
 -- events within ~1s of Modal writing scanner results (replaces 8s polling).

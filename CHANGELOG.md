@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Dashboard + new Workflow Run/Triage/Verify shots, quality floors, R/Q badges;
   live CLI scan refresh; capture script covers `05-workflow/`
 ### Fixed
+- Schema cleanup: `db/schema.sql` now drops `tripwire_rollup_item(uuid)` via
+  `DROP FUNCTION IF EXISTS` so `agentvetter setup --force` idempotently removes
+  the legacy function on any older deployment. Dropped from live Supabase DB
+  (2026-10-08). No code called the old function. PR: [#188](https://github.com/neomatrix369/AgentVetter/pull/188).
 - Dashboard item drawer: Findings, Modal console output, and Raw output start
   collapsed so stored scanner runtime is not dumped open by default.
 - Dependency CVEs blocking PR checks: `pyjwt` → 2.15.1, `urllib3` → 2.8.0,
