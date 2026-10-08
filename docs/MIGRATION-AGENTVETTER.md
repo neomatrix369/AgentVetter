@@ -99,10 +99,16 @@ Live code calls `agentvetter_rollup_item` (CLI, Modal sandbox, reconcile script)
 
 **Operator action:** re-apply `db/schema.sql` (via `agentvetter setup --force` /
 first-scan bootstrap, or SQL editor) so the function exists on Supabase.
+`db/schema.sql` also carries `DROP FUNCTION IF EXISTS tripwire_rollup_item(uuid)`
+so `agentvetter setup --force` idempotently removes the legacy function on any
+older deployment.
 
 **VERIFIED (2026-10-02, maintainer workspace):** `agentvetter_rollup_item` applied
 to live Supabase (direct SQL when `agentvetter setup --force` failed on pooler
 TLS self-signed chain). Subsequent Modal smoke scan rollup succeeded.
+
+**VERIFIED (2026-10-08):** `tripwire_rollup_item` dropped from live Supabase;
+only `agentvetter_rollup_item` remains. PR: [#188](https://github.com/neomatrix369/AgentVetter/pull/188).
 
 ## Checklist for operators
 
@@ -121,3 +127,4 @@ on a machine that has not completed that step.
       `AgentVetter` path casing → [Pages PR #21](https://github.com/neomatrix369/neomatrix369.github.io/pull/21)
 - [ ] Dashboard localStorage cleared / new keys in use (browser-local)
 - [x] Supabase has `agentvetter_rollup_item`
+- [x] `tripwire_rollup_item` dropped from Supabase (only `agentvetter_rollup_item` remains; VERIFIED 2026-10-08)
