@@ -43,9 +43,11 @@ export async function probeSchema(supabase = getSupabase()) {
   return 'ready';
 }
 
-/** SSL options for a Postgres URL. Local servers have no TLS; remote hosts must verify the cert. */
+/** SSL options for a Postgres URL. Local servers have no TLS; remote hosts must verify the cert.
+ *  Supabase pooler hosts use a self-signed chain — skip cert verification for them only. */
 export function pgSslConfig(url) {
   if (url.includes('localhost') || url.includes('127.0.0.1')) return false;
+  if (url.includes('.pooler.supabase.com')) return { rejectUnauthorized: false };
   return { rejectUnauthorized: true };
 }
 

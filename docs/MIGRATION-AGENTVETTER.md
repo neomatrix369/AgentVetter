@@ -104,8 +104,12 @@ so `agentvetter setup --force` idempotently removes the legacy function on any
 older deployment.
 
 **VERIFIED (2026-10-02, maintainer workspace):** `agentvetter_rollup_item` applied
-to live Supabase (direct SQL when `agentvetter setup --force` failed on pooler
-TLS self-signed chain). Subsequent Modal smoke scan rollup succeeded.
+to live Supabase (direct SQL at the time; pooler TLS was not yet fixed).
+Subsequent Modal smoke scan rollup succeeded.
+
+**VERIFIED (2026-10-08):** Pooler TLS fixed — `agentvetter setup --force` now
+works against `*.pooler.supabase.com` without the self-signed certificate chain
+error. `pgSslConfig` skips cert verification for pooler hosts only. PR: [#188](https://github.com/neomatrix369/AgentVetter/pull/188).
 
 **VERIFIED (2026-10-08):** `tripwire_rollup_item` dropped from live Supabase;
 only `agentvetter_rollup_item` remains. PR: [#188](https://github.com/neomatrix369/AgentVetter/pull/188).

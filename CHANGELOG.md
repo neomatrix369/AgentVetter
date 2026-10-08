@@ -24,9 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (2026-10-08). No code called the old function. PR: [#188](https://github.com/neomatrix369/AgentVetter/pull/188).
 - Dashboard item drawer: Findings, Modal console output, and Raw output start
   collapsed so stored scanner runtime is not dumped open by default.
+- Supabase pooler TLS: `pgSslConfig` in `cli/src/ensureSchema.js` now returns
+  `{ rejectUnauthorized: false }` for `*.pooler.supabase.com` hosts so
+  `agentvetter setup --force` works against the Session/Transaction pooler
+  without a self-signed certificate chain error. VERIFIED (2026-10-08). PR: [#188](https://github.com/neomatrix369/AgentVetter/pull/188).
 - Dependency CVEs blocking PR checks: `pyjwt` → 2.15.1, `urllib3` → 2.8.0,
   `virtualenv` → 21.14.5 (`uv.lock`); `brace-expansion` → 5.0.12
-  (`cli/package-lock.json`).
+  (`cli/package-lock.json`); `multidict` 6.7.1 → 7.0.0 (GHSA-54p9-h82j-f925,
+  `uv.lock`). PR: [#188](https://github.com/neomatrix369/AgentVetter/pull/188).
 - Workflow L→R smoke FAIL/PARTIAL (slice 77, on
   `slice/77-workflow-smoke-fix-target-flow`): Run “Review findings” CTA treats
   `not_applicable` / `blocked` as finished; process line only says “running”
