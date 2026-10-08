@@ -27,6 +27,10 @@ test('pgSslConfig verifies TLS for remote Postgres and disables SSL on localhost
     pgSslConfig('postgresql://postgres@db.example.supabase.co:5432/postgres'),
     { rejectUnauthorized: true }
   );
+  assert.deepEqual(
+    pgSslConfig('postgresql://postgres@aws-0-us-east-1.pooler.supabase.com:5432/postgres'),
+    { rejectUnauthorized: false }
+  );
 });
 
 test('isMissingSchemaError detects PGRST204 missing-column errors', () => {
