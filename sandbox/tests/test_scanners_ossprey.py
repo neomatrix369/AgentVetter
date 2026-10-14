@@ -720,6 +720,7 @@ def test_given_any_item_type_when_run_all_then_ossprey_runs_last(
         patch.object(scanners, "run_snyk", return_value=([], [])),
         patch.object(scanners, "run_depshield", return_value=([], [])),
         patch.object(scanners, "run_cargo_audit", return_value=([], [])),
+        patch.object(scanners, "run_presend", return_value=([], [])),
         patch.object(scanners, "run_ossprey", return_value=([], ossprey_rows)) as ossprey,
     ):
         result = scanners.run_all_scanners(

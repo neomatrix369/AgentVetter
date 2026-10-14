@@ -98,7 +98,12 @@ def test_given_registry_when_list_groups_then_cargo_audit_between_depshield_ossp
 
 
 def test_given_tail_timeouts_when_summed_then_within_scan_timeout() -> None:
-    tail = scanners.DEPSHIELD_TIMEOUT + scanners.CARGO_AUDIT_TIMEOUT + scanners.OSSPREY_TIMEOUT
+    tail = (
+        scanners.DEPSHIELD_TIMEOUT
+        + scanners.CARGO_AUDIT_TIMEOUT
+        + scanners.PRESEND_TIMEOUT
+        + scanners.OSSPREY_TIMEOUT
+    )
     assert tail <= scanners.SCAN_TIMEOUT
 
 

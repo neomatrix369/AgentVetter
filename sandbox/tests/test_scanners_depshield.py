@@ -705,8 +705,9 @@ def test_given_registry_when_inspected_then_depshield_is_both_before_cargo_audit
     assert dep["sources"] == ["DepShield"]
     assert dep["applies_to"] == "both"
     assert dep["runner"] is scanners._run_depshield_group
-    assert scanners.SCANNER_GROUPS[-3] is dep
-    assert scanners.SCANNER_GROUPS[-2]["sources"] == scanners.CARGO_AUDIT_SOURCES
+    assert scanners.SCANNER_GROUPS[-4] is dep
+    assert scanners.SCANNER_GROUPS[-3]["sources"] == scanners.CARGO_AUDIT_SOURCES
+    assert scanners.SCANNER_GROUPS[-2]["sources"] == scanners.PRESEND_SOURCES
     assert scanners.SCANNER_GROUPS[-1]["sources"] == scanners.OSSPREY_SOURCES
 
 
@@ -734,6 +735,7 @@ def test_given_any_item_type_when_run_all_then_depshield_before_cargo_and_osspre
         patch.object(scanners, "run_snyk", return_value=([], [])),
         patch.object(scanners, "run_depshield", return_value=([], dep_rows)) as dep,
         patch.object(scanners, "run_cargo_audit", return_value=([], [])),
+        patch.object(scanners, "run_presend", return_value=([], [])),
         patch.object(scanners, "run_ossprey", return_value=([], [])),
     ):
         result = scanners.run_all_scanners(
@@ -741,8 +743,9 @@ def test_given_any_item_type_when_run_all_then_depshield_before_cargo_and_osspre
         )
 
     ### Then
-    assert started[-3] == ["DepShield"]
-    assert started[-2] == ["Cargo Audit"]
+    assert started[-4] == ["DepShield"]
+    assert started[-3] == ["Cargo Audit"]
+    assert started[-2] == ["Presend"]
     assert started[-1] == ["Ossprey"]
     dep.assert_called_once_with("/w", item_type)
     assert result["scanner_rows"] == dep_rows
