@@ -1,0 +1,19 @@
+# Keep IMAGE build context small (MANIFEST context is repo root).
+.git
+.github
+.cursor
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/*.pyc
+sandbox/tests
+cli
+db/*
+!db/schema.sql
+docs
+prototypes
+fixtures
+coverage
+.env
+.env.*
+!.env.example

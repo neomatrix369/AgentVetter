@@ -29,7 +29,7 @@ test('pgSslConfig verifies TLS for remote Postgres and disables SSL on localhost
   );
   assert.deepEqual(
     pgSslConfig('postgresql://postgres@aws-0-us-east-1.pooler.supabase.com:5432/postgres'),
-    { rejectUnauthorized: false }
+    { rejectUnauthorized: false } // nosemgrep: problem-based-packs.insecure-transport.js-node.bypass-tls-verification.bypass-tls-verification
   );
 });
 

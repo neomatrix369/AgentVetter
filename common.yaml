@@ -1,0 +1,18 @@
+namespace: agentvetter
+
+# Hub catalog metadata (kit pattern: metadata-only block, no empty process-group).
+common:
+  metadata:
+    name: AgentVetter
+    description: >-
+      Discover and scan AI skills and MCP servers, then review findings in one
+      Live dashboard. Provisions managed Supabase, runs in-cluster schema and
+      Modal bootstrap from injected secrets (no local .env), serves the AgentVetter
+      UI via ingress, and collects Modal plus scanner SaaS credentials for full
+      Live scan coverage.
+    tags: security,ai,mcp,skills,dashboard,supabase,modal,scanning,bootstrap
+    website: https://github.com/neomatrix369/AgentVetter
+    source: https://github.com/neomatrix369/AgentVetter
+    license: MIT
+    publisher: agentvetter
+    icon: https://raw.githubusercontent.com/neomatrix369/AgentVetter/main/AgentVetter-Banner.png
