@@ -1,0 +1,41 @@
+namespace: agentvetter
+
+# Mutable "latest" track — thin inherits over immutable v1.0.0 definitions.
+
+supabase:
+  defines: supabase/project
+  inherits: agentvetter/supabase-v1
+
+bootstrap:
+  defines: runnable
+  inherits: agentvetter/bootstrap-v1
+  connections:
+    supabase:
+      runnable: agentvetter/supabase
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - agentvetter/supabase
+      timeout: 900
+
+dashboard:
+  defines: runnable
+  inherits: agentvetter/dashboard-v1
+  connections:
+    supabase:
+      runnable: agentvetter/supabase
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - agentvetter/supabase
+      timeout: 900
+
+prod:
+  defines: group
+  inherits: agentvetter/prod-v1
+  members:
+    - agentvetter/supabase
+    - agentvetter/bootstrap
+    - agentvetter/dashboard

@@ -47,7 +47,7 @@ export async function probeSchema(supabase = getSupabase()) {
  *  Supabase pooler hosts use a self-signed chain — skip cert verification for them only. */
 export function pgSslConfig(url) {
   if (url.includes('localhost') || url.includes('127.0.0.1')) return false;
-  if (url.includes('.pooler.supabase.com')) return { rejectUnauthorized: false };
+  if (url.includes('.pooler.supabase.com')) return { rejectUnauthorized: false }; // nosemgrep: problem-based-packs.insecure-transport.js-node.bypass-tls-verification.bypass-tls-verification
   return { rejectUnauthorized: true };
 }
 
@@ -124,10 +124,8 @@ function pgConnectHint(code) {
     : '';
 }
 
-export async function applySchema({
-  dbUrl = process.env.SUPABASE_DB_URL,
-  ClientImpl = Client,
-} = {}) {
+/** Validate and normalise SUPABASE_DB_URL; throws when missing or not a postgres URL. */
+function requireDbUrl(dbUrl) {
   const url = (dbUrl || '').trim();
   if (!url) {
     throw new Error(
@@ -138,9 +136,30 @@ export async function applySchema({
   if (!/^postgres(ql)?:\/\//i.test(url)) {
     throw new Error('SUPABASE_DB_URL must be a postgresql:// connection string.');
   }
+  return url;
+}
 
+/**
+ * Connect timeout in ms from PGCONNECT_TIMEOUT_MS (default 20 s).
+ * Supabase direct db.<ref> hosts are often IPv6-only; without a connect
+ * timeout a blackholed IPv4/Cloudflare path hangs forever in bootstrap.
+ */
+function connectTimeoutFrom(raw) {
+  const parsed = Number(raw || 20000);
+  return Number.isFinite(parsed) ? parsed : 20000;
+}
+
+export async function applySchema({
+  dbUrl = process.env.SUPABASE_DB_URL,
+  ClientImpl = Client,
+} = {}) {
+  const url = requireDbUrl(dbUrl);
   const sql = readFileSync(schemaPath(), 'utf8');
-  const client = new ClientImpl({ connectionString: url, ssl: pgSslConfig(url) });
+  const client = new ClientImpl({
+    connectionString: url,
+    ssl: pgSslConfig(url),
+    connectionTimeoutMillis: connectTimeoutFrom(process.env.PGCONNECT_TIMEOUT_MS),
+  });
   try {
     await client.connect();
     await client.query(sql);
