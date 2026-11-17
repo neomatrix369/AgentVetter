@@ -16,57 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `applySchema` gets a Postgres connect timeout (`PGCONNECT_TIMEOUT_MS`,
   default 20 s) so an unreachable IPv6-only Supabase host fails instead of hanging.
 
-### Docs
-- Migration guide: Modal secrets + `agentvetter-scan` deploy, Supabase
-  `agentvetter_rollup_item`, and Pages demo path cutover recorded as **VERIFIED**
-  (maintainer workspace 2026-10-02); operator checklist updated. See
-  [docs/MIGRATION-AGENTVETTER.md](docs/MIGRATION-AGENTVETTER.md).
-- README hero image: `AgentVetter-Banner.png`; GitHub badge/clone links use
-  `neomatrix369/AgentVetter`.
-- Screenshot gallery regenerated 2026-09-21 (post-rebase onto `main`): Mock
-  Dashboard + new Workflow Run/Triage/Verify shots, quality floors, R/Q badges;
-  live CLI scan refresh; capture script covers `05-workflow/`
-### Fixed
-- Schema cleanup: `db/schema.sql` now drops `tripwire_rollup_item(uuid)` via
-  `DROP FUNCTION IF EXISTS` so `agentvetter setup --force` idempotently removes
-  the legacy function on any older deployment. Dropped from live Supabase DB
-  (2026-10-08). No code called the old function. PR: [#188](https://github.com/neomatrix369/AgentVetter/pull/188).
-- Dashboard item drawer: Findings, Modal console output, and Raw output start
-  collapsed so stored scanner runtime is not dumped open by default.
-- Supabase pooler TLS: `pgSslConfig` in `cli/src/ensureSchema.js` now returns
-  `{ rejectUnauthorized: false }` for `*.pooler.supabase.com` hosts so
-  `agentvetter setup --force` works against the Session/Transaction pooler
-  without a self-signed certificate chain error. VERIFIED (2026-10-08). PR: [#188](https://github.com/neomatrix369/AgentVetter/pull/188).
-- Dependency CVEs blocking PR checks: `pyjwt` → 2.15.1, `urllib3` → 2.8.0,
-  `virtualenv` → 21.14.5 (`uv.lock`); `brace-expansion` → 5.0.12
-  (`cli/package-lock.json`); `multidict` 6.7.1 → 7.0.0 (GHSA-54p9-h82j-f925,
-  `uv.lock`). PR: [#188](https://github.com/neomatrix369/AgentVetter/pull/188).
-- Workflow L→R smoke FAIL/PARTIAL (slice 77, on
-  `slice/77-workflow-smoke-fix-target-flow`): Run “Review findings” CTA treats
-  `not_applicable` / `blocked` as finished; process line only says “running”
-  when active statuses exist; finding stable ids include target identity +
-  dedupe so Triage/Fix/Report share one universe; `stableFindingId` is
-  idempotent so Triage To fix / Needs review / Dismiss prefs apply after save;
-  single finding select after focusing one skill/MCP/package; Verify no longer
-  claims “Finding gone” for heuristic patches until Mark fixed. VERIFIED
-  (unit GWT-77.* + Mock/Live browser smoke 2026-09-21). Spec:
-  `docs/plan/slices/18-R-approved-repo-workflow/slice-77-workflow-smoke-fix-target-flow.md`.
-- Triage SCA rows: show lockfile path in the title (`pkg@ver · CVE · path`) and
-  collapse exact duplicate inserts (`×N`) so monorepo package findings are
-  distinguishable — vibe-kanban braces/adm-zip no longer look identical.
-  `agentvetter-triage.js` + Triage row meta line.
-- Package / SCA honesty for unsupported ecosystems (Cargo-only and similar):
-
-  `snyk test` does not support Rust/Cargo — AgentVetter reports `not_applicable`
-  with an explicit ecosystem detail instead of a false clean. When every
-  applicable scanner is `not_applicable` / skipped (zero completed engines),
-  `agentvetter_rollup_item` stays grey and the Live dashboard paints
-  **NO COVERAGE** (not UNSCANNED — a scan ran; no engine scored). Never GREEN /
-  `R 0.00`. Partial-failed with zero completed engines remains ERROR.
-  Dashboard: `agentvetter-status.js` / `agentvetter-live.js`; rollup: `db/schema.sql`;
-  Snyk preflight: `sandbox/scanners.py`. VERIFIED on Live Packages (pizauth / snare).
-
-### Added
 - Dashboard Workflow chrome polish (slice 76, Wave R) — IMPLEMENTED / VERIFIED
   (unit) on `main` ([#165](https://github.com/neomatrix369/AgentVetter/pull/165)).
   Denser Triage filter toolbars with Type/Quality/Target/Status group labels,
@@ -234,6 +183,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `agentvetter scan --type <skill|mcp>` — restricts machine-wide discovery to a single artifact
   category without changing any other scan behaviour; composes with `--dry-discover`,
   `--force`, `--concurrency`, and explicit path arguments
+
+### Docs
+- Migration guide: Modal secrets + `agentvetter-scan` deploy, Supabase
+  `agentvetter_rollup_item`, and Pages demo path cutover recorded as **VERIFIED**
+  (maintainer workspace 2026-10-02); operator checklist updated. See
+  [docs/MIGRATION-AGENTVETTER.md](docs/MIGRATION-AGENTVETTER.md).
+- README hero image: `AgentVetter-Banner.png`; GitHub badge/clone links use
+  `neomatrix369/AgentVetter`.
+- Screenshot gallery regenerated 2026-09-21 (post-rebase onto `main`): Mock
+  Dashboard + new Workflow Run/Triage/Verify shots, quality floors, R/Q badges;
+  live CLI scan refresh; capture script covers `05-workflow/`
+### Fixed
+- Schema cleanup: `db/schema.sql` now drops `tripwire_rollup_item(uuid)` via
+  `DROP FUNCTION IF EXISTS` so `agentvetter setup --force` idempotently removes
+  the legacy function on any older deployment. Dropped from live Supabase DB
+  (2026-10-08). No code called the old function. PR: [#188](https://github.com/neomatrix369/AgentVetter/pull/188).
+- Dashboard item drawer: Findings, Modal console output, and Raw output start
+  collapsed so stored scanner runtime is not dumped open by default.
+- Supabase pooler TLS: `pgSslConfig` in `cli/src/ensureSchema.js` now returns
+  `{ rejectUnauthorized: false }` for `*.pooler.supabase.com` hosts so
+  `agentvetter setup --force` works against the Session/Transaction pooler
+  without a self-signed certificate chain error. VERIFIED (2026-10-08). PR: [#188](https://github.com/neomatrix369/AgentVetter/pull/188).
+- Dependency CVEs blocking PR checks: `pyjwt` → 2.15.1, `urllib3` → 2.8.0,
+  `virtualenv` → 21.14.5 (`uv.lock`); `brace-expansion` → 5.0.12
+  (`cli/package-lock.json`); `multidict` 6.7.1 → 7.0.0 (GHSA-54p9-h82j-f925,
+  `uv.lock`). PR: [#188](https://github.com/neomatrix369/AgentVetter/pull/188).
+- Workflow L→R smoke FAIL/PARTIAL (slice 77, on
+  `slice/77-workflow-smoke-fix-target-flow`): Run “Review findings” CTA treats
+  `not_applicable` / `blocked` as finished; process line only says “running”
+  when active statuses exist; finding stable ids include target identity +
+  dedupe so Triage/Fix/Report share one universe; `stableFindingId` is
+  idempotent so Triage To fix / Needs review / Dismiss prefs apply after save;
+  single finding select after focusing one skill/MCP/package; Verify no longer
+  claims “Finding gone” for heuristic patches until Mark fixed. VERIFIED
+  (unit GWT-77.* + Mock/Live browser smoke 2026-09-21). Spec:
+  `docs/plan/slices/18-R-approved-repo-workflow/slice-77-workflow-smoke-fix-target-flow.md`.
+- Triage SCA rows: show lockfile path in the title (`pkg@ver · CVE · path`) and
+  collapse exact duplicate inserts (`×N`) so monorepo package findings are
+  distinguishable — vibe-kanban braces/adm-zip no longer look identical.
+  `agentvetter-triage.js` + Triage row meta line.
+- Package / SCA honesty for unsupported ecosystems (Cargo-only and similar):
+
+  `snyk test` does not support Rust/Cargo — AgentVetter reports `not_applicable`
+  with an explicit ecosystem detail instead of a false clean. When every
+  applicable scanner is `not_applicable` / skipped (zero completed engines),
+  `agentvetter_rollup_item` stays grey and the Live dashboard paints
+  **NO COVERAGE** (not UNSCANNED — a scan ran; no engine scored). Never GREEN /
+  `R 0.00`. Partial-failed with zero completed engines remains ERROR.
+  Dashboard: `agentvetter-status.js` / `agentvetter-live.js`; rollup: `db/schema.sql`;
+  Snyk preflight: `sandbox/scanners.py`. VERIFIED on Live Packages (pizauth / snare).
 
 ### Changed
 - Hard-cut residual legacy product names from live code/docs (ADR-0018 amend
