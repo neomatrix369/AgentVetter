@@ -26,6 +26,10 @@ const SECRET_RULES = [
   { re: /Bearer\s+\S+/gi, to: 'Bearer [REDACTED]' },
   { re: /\b(sk-|sk-ant-|ospy_|tsi_|dashscope)[A-Za-z0-9_-]{8,}\b/gi, to: '[REDACTED_KEY]' },
   { re: /api[_-]?key["']?\s*[:=]\s*["']?[^"'&\s]+/gi, to: 'api_key=[REDACTED]' },
+  { re: /\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, to: '[REDACTED_TOKEN]' },
+  { re: /\bAKIA[0-9A-Z]{16}\b/g, to: '[REDACTED_TOKEN]' },
+  { re: /\b(sk|rk)[_-](live|test)[_-][A-Za-z0-9]{8,}\b/gi, to: '[REDACTED_KEY]' },
+  { re: /password["']?\s*[:=]\s*["']?[^"'&\s]+/gi, to: 'password=[REDACTED]' },
 ];
 
 function isInsideRoot(root, candidate) {

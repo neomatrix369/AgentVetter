@@ -764,7 +764,7 @@ test('given a quoted Bearer phrase in reasoning when routing persists then the s
     callSieFn: async () => ({
       escalate: false,
       low_confidence: false,
-      reasoning: `The header Bearer ${token} is sent unencrypted.`,
+      reasoning: `He said "Bearer ${token}" and moved on.`,
     }),
   }));
 

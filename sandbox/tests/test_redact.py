@@ -79,3 +79,25 @@ def test_given_api_key_assignment_when_redacted_then_value_is_masked() -> None:
     ### Then
     assert value not in out
     assert "api_key=[REDACTED]" in out
+
+
+def test_given_github_aws_live_key_and_password_when_redacted_then_values_are_masked() -> None:
+    """Scenario: common credential formats in evidence are masked, matching the CLI rules.
+
+    Slice: stored-evidence masking (PR #212 review follow-up).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    gh = "gh" + "p_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4"
+    aws = "AKIA" + "IOSFODNN7EXAMPLE"
+    live = "sk" + "_live_" + "abcdef12345678"
+    pw = "hunter" + "2secret"
+    text = f"token {gh} aws {aws} key {live} password={pw}"
+
+    ### When
+    out = redact.redact_secrets(text)
+
+    ### Then
+    for raw in (gh, aws, live, pw):
+        assert raw not in out, raw

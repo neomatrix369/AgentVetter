@@ -101,7 +101,13 @@ test('given a panel run with judgements when persistPanelRun then run and judgem
   assert.equal(supabase.inserted.judgements[0].slot, 1);
 });
 
-test('given an earlier panel run for the same finding when persistPanelRun then the old run and its judgements are removed first', async () => {
+/**
+ * Scenario: an earlier panel run for a finding is removed only after the new run is stored.
+ * Slice: judge rerun ordering (PR #212 review follow-up).
+ * CONTRACT_SHAPE: bounded-change
+ * Outcome anchor: A judge rerun never leaves a finding without its last verdict
+ */
+test('given an earlier panel run for the same finding when persistPanelRun then the old run and its judgements are removed after the new run is stored', async () => {
   // -- Given --
   const supabase = fakeJudgeSupabase({ priorPanelRuns: [{ id: 'old-1' }] });
   const panelRun = {

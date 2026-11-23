@@ -317,3 +317,29 @@ test('formatEvidenceReport: unverified findings are labelled and not confirmed',
   assert.doesNotMatch(actual, /independently confirmed/);
   assert.match(actual, /hidden_instruction/);
 });
+
+test('given GitHub, AWS, live-key and password formats when maskSecrets then each value is masked', () => {
+  /**
+   * Scenario: common credential formats in evidence text are masked, not only sk- keys.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given text containing a GitHub token, an AWS key, an sk_live key and a password,
+   * When maskSecrets runs,
+   * Then none of the raw values remain.
+   */
+  // -- Given --
+  const gh = 'gh' + 'p_' + 'A1b2C3d4E5f6G7h8I9j0K1l2M3n4';
+  const aws = 'AKIA' + 'IOSFODNN7EXAMPLE';
+  const live = 'sk' + '_live_' + 'abcdef12345678';
+  const pw = 'hunter' + '2secret';
+  const text = `token ${gh} aws ${aws} key ${live} password=${pw}`;
+
+  // -- When --
+  const out = maskSecrets(text).text;
+
+  // -- Then --
+  for (const raw of [gh, aws, live, pw]) assert.ok(!out.includes(raw), `leaked: ${raw}`);
+});
+
