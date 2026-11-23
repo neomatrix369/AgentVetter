@@ -178,7 +178,7 @@ C4Container
 - `cli/` — `agentvetter` Node CLI (`scan`, `setup`, `route`)
 - `sandbox/` — Modal app + scanner adapters (`scanners.py`); unit tests in `sandbox/tests/`
 - `db/schema.sql` — Postgres/Supabase DDL + rollup + `dashboard_latest_runs` view
-  (Live dashboard: one latest `scan_run` per item); anon SELECT + Realtime
+  (Live dashboard: one latest `scan_run` per item); anon SELECT on items, scan runs, scanners and findings only (judge panel tables are service-role only)
 - `prototypes/dc-dashboard/` — Live/Mock dashboard (Horizon A ship UI; prototype path). Public Mock preview: [neomatrix369.github.io/demos/agentvetter-dashboard/](https://neomatrix369.github.io/demos/agentvetter-dashboard/) · [demo video](https://youtu.be/omGOw9ruN3Y). Shows router pathway strips (`Scan → ■` / `Scan → SIE → ■` / `Scan → SIE → Model Studio`), Escalated / SIE-only filters, and skill quality triage tabs (**Quality ≥ 80** / **Quality < 80** / **No quality score** — slice 42 A14–A15 ON BRANCH) — [reading-router-results.md](./user-guide/reading-router-results.md)
 - `prototypes/sie-studio/` / `prototypes/model-studio/` — sample CLIs for router backends
 - `scripts/` — setup (Supabase/Modal), `serve-dashboard.mjs`, hygiene gates, router fixtures

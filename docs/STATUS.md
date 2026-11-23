@@ -64,7 +64,9 @@ Reachable through production entry points / config:
   path:line; mismatches fail closed and are never independently confirmed.
   Deterministic guards record hidden/encoded instruction attempts; scanned
   content is wrapped as `untrusted_data` (never system/judge instructions).
-  Secret-like tokens are masked in logs/prompts unless `--reveal-secrets`.
+  Secret-like tokens are masked in logs/prompts unless `--reveal-secrets`, and
+  in stored finding snippets, scanner console output and details (sandbox write
+  path, `sandbox/redact.py`). Judge panel tables are service-role only.
   `agentvetter scan` / `--dry-discover` print `[evidence]` rows —
   `cli/src/evidenceVerify.js`. IMPLEMENTED (host/CLI); finding-row persistence
   stays slice 67.
