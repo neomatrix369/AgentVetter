@@ -342,4 +342,3 @@ test('given GitHub, AWS, live-key and password formats when maskSecrets then eac
   // -- Then --
   for (const raw of [gh, aws, live, pw]) assert.ok(!out.includes(raw), `leaked: ${raw}`);
 });
-
