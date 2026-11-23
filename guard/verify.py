@@ -183,8 +183,9 @@ def _row(
 
 
 def _at_or_above(rag: str, threshold: str) -> bool:
-    """Same rule the guard applies: red always blocks, amber blocks at an amber threshold."""
-    return rag == "red" or (threshold == "amber" and rag == "amber")
+    """Same rule the guard applies: red always blocks; amber blocks unless the threshold is red."""
+    # Same as guard_hook: any threshold other than "red" (i.e. "red_and_amber") also blocks amber.
+    return rag == "red" or (threshold != "red" and rag == "amber")
 
 
 def _running_blocks(

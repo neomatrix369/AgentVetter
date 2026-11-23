@@ -121,11 +121,11 @@ def test_given_running_scan_without_prior_verdict_when_classified_then_blocked()
     )
 
 
-def test_given_amber_verdict_and_amber_threshold_when_at_or_above_then_true() -> None:
-    """Scenario: At an amber threshold an amber verdict is blocked, as the guard blocks it."""
+def test_given_amber_verdict_and_red_and_amber_threshold_when_at_or_above_then_true() -> None:
+    """Scenario: With threshold red_and_amber an amber verdict is blocked, as the guard blocks it."""
     ### Given / When / Then
     from guard.verify import _at_or_above
 
-    assert _at_or_above("amber", "amber") is True
+    assert _at_or_above("amber", "red_and_amber") is True
     assert _at_or_above("amber", "red") is False
     assert _at_or_above("red", "red") is True
