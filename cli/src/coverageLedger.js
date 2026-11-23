@@ -40,6 +40,13 @@ const ECOSYSTEM_CATALOGUE = [
     unsupported_by: [],
   },
   {
+    ecosystem: 'Java/Maven-Gradle',
+    language: 'Java',
+    markers: ['pom.xml', 'build.gradle', 'build.gradle.kts'],
+    scanners: ['Snyk'],
+    unsupported_by: ['DepShield (npm+PyPI manifests only)'],
+  },
+  {
     ecosystem: 'Go',
     language: 'Go',
     markers: ['go.mod', 'go.sum'],
@@ -162,6 +169,8 @@ const STATUS_TO_ACTION = new Map([
   ['skipped', 'skipped'],
   ['skipped_missing_credential', 'skipped'],
   ['not_applicable', 'skipped'],
+  // Scanner needs setup (e.g. missing credential): shown as skipped, not silently not_started.
+  ['needs_setup', 'skipped'],
 ]);
 
 /**

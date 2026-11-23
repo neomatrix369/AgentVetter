@@ -7,6 +7,7 @@
  *
  * Inventory SSOT: prototypes/sie-studio/models.json (gen-4b, gen-27b).
  */
+import { getSupabase } from './supabaseClient.js';
 import {
   formatUntrustedForPrompt,
   wrapUntrustedContent,
@@ -283,7 +284,7 @@ function hasDisagreement(judgements) {
   return new Set(answeredVerdicts(judgements).map((j) => j.verdict)).size > 1;
 }
 
-function coerceFinal(finalJudge, judgements) {
+export function coerceFinal(finalJudge, judgements) {
   const disagreement = hasDisagreement(judgements);
   if (finalJudge.status !== 'answered') {
     return {
@@ -298,6 +299,11 @@ function coerceFinal(finalJudge, judgements) {
   let verdict = pickVerdict(finalJudge.verdict);
   const confidence = confidenceOf(finalJudge.confidence);
   if (disagreement && confidence < FINAL_CONFIDENCE_FLOOR) {
+    verdict = 'needs_review';
+  }
+  // Without at least two answered panel judges there is no quorum, so the final
+  // judge alone must not turn a finding into a true or false positive.
+  if (answeredVerdicts(judgements).length < 2) {
     verdict = 'needs_review';
   }
   return { ...finalJudge, verdict, confidence, disagreement };
@@ -377,6 +383,93 @@ export async function runPanelForCandidate(candidate, opts = {}) {
   const panel_run = buildPanelRun(candidate, judgements, finalJudge, inventory, nowFn);
   if (opts.persistFn) await opts.persistFn(panel_run);
   return panel_run;
+}
+
+/**
+ * One judge candidate per finding of a batch's non-failed scan runs.
+ * Shape matches what runPanelForCandidate reads (finding, evidence, item_label, ids).
+ */
+export async function loadJudgeCandidates(supabase, batchId) {
+  const { data: runs, error: runsError } = await supabase
+    .from('scan_runs').select('id').eq('batch_id', batchId).neq('status', 'failed');
+  if (runsError) throw runsError;
+  const runIds = (runs || []).map((r) => r.id);
+  if (!runIds.length) return [];
+
+  const { data: findings, error: findingsError } = await supabase
+    .from('findings').select('*').in('scan_run_id', runIds);
+  if (findingsError) throw findingsError;
+  const rows = findings || [];
+  if (!rows.length) return [];
+
+  const itemIds = [...new Set(rows.map((f) => f.item_id))];
+  const { data: items, error: itemsError } = await supabase
+    .from('items').select('id, identifier, name').in('id', itemIds);
+  if (itemsError) throw itemsError;
+  const itemsById = Object.fromEntries((items || []).map((i) => [i.id, i]));
+
+  return rows.map((f) => ({
+    scan_run_id: f.scan_run_id,
+    item_id: f.item_id,
+    finding_id: f.id,
+    item_label: itemsById[f.item_id]?.identifier || itemsById[f.item_id]?.name || f.item_id,
+    finding: {
+      category: f.category,
+      severity: f.severity,
+      file_path: f.file_path,
+      location: f.location,
+      message: f.message,
+      scanner_source: f.scanner_source,
+    },
+    evidence: { snippet: f.snippet },
+  }));
+}
+
+const PANEL_RUN_COLUMNS = [
+  'scan_run_id', 'item_id', 'finding_id', 'answered_count', 'total_judges', 'disagreement',
+  'final_verdict', 'final_confidence', 'final_reason', 'final_model', 'final_raw_response',
+  'prompt_version', 'sie_run_id', 'inventory_note',
+];
+
+/** Insert one panel run and its judgements, writing only judge_panel_runs columns. */
+export async function persistPanelRun(supabase, panelRun) {
+  const judgements = panelRun.judgements || [];
+  const row = Object.fromEntries(PANEL_RUN_COLUMNS.map((k) => [k, panelRun[k] ?? null]));
+  const { data: saved, error } = await supabase
+    .from('judge_panel_runs').insert(row).select().single();
+  if (error) throw error;
+
+  if (judgements.length) {
+    const rows = judgements.map((j) => ({
+      panel_run_id: saved.id,
+      slot: j.slot,
+      model: j.model,
+      verdict: j.verdict ?? null,
+      confidence: j.confidence ?? null,
+      reason: j.reason ?? null,
+      raw_response: j.raw_response ?? null,
+      prompt_version: j.prompt_version ?? null,
+      run_id: j.run_id ?? null,
+      status: j.status,
+      error_message: j.error_message ?? null,
+    }));
+    const { error: judgementError } = await supabase.from('judge_panel_judgements').insert(rows);
+    if (judgementError) throw judgementError;
+  }
+  return saved;
+}
+
+/**
+ * Judge every finding in a batch and persist the panel runs.
+ * Used by `agentvetter judge --batch-id` and the opt-in post-scan judge.
+ */
+export async function runBatchJudgement(batchId, { supabase = getSupabase(), ...opts } = {}) {
+  const candidates = await loadJudgeCandidates(supabase, batchId);
+  return runJudgePanel(batchId, {
+    ...opts,
+    candidates,
+    persistFn: (panelRun) => persistPanelRun(supabase, panelRun),
+  });
 }
 
 /**
