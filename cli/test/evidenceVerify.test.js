@@ -366,25 +366,56 @@ test('given a quoted multi-word api_key and password when maskSecrets then the w
   }
 });
 
-test('given an unterminated quote and a non-ASCII prefix when maskSecrets then both values are still masked', () => {
+test('given an unterminated quote with spaces when maskSecrets then the rest of the line is masked', () => {
   /**
-   * Scenario: a stray quote does not stop masking, and ASCII word boundaries match the sandbox.
+   * Scenario: a password with no closing quote is masked to the end of its line.
    * Slice: stored-evidence masking (PR #212 review follow-up).
    * CONTRACT_SHAPE: bounded-change
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
-   * Given a password with no closing quote and a key that follows a non-ASCII letter,
+   * Given a password whose opening quote never closes and whose value has spaces,
    * When maskSecrets runs,
-   * Then neither value remains.
+   * Then the output is exactly the placeholder.
    */
   // -- Given --
-  const pw = 'hunter' + '2secret';
-  const key = 'abcdefgh' + '12345678';
+  const text = 'password="correct horse battery';
 
-  // -- When --
-  const out = maskSecrets(`password="${pw} then \u00e9sk-ant-${key}`).text;
+  // -- When / Then --
+  assert.equal(maskSecrets(text).text, 'password=[REDACTED]');
+});
 
-  // -- Then --
-  assert.ok(!out.includes(pw), 'unterminated password leaked');
-  assert.ok(!out.includes(key), 'key after non-ASCII letter leaked');
+test('given an api_key value spanning a newline when maskSecrets then the whole value is masked', () => {
+  /**
+   * Scenario: a quoted value that spans lines is masked in full, including its second line.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a quoted api_key whose value contains a newline,
+   * When maskSecrets runs,
+   * Then the output is exactly the placeholder.
+   */
+  // -- Given --
+  const text = 'api_key="sk-part1\nsecret2"';
+
+  // -- When / Then --
+  assert.equal(maskSecrets(text).text, 'api_key=[REDACTED]');
+});
+
+test('given a key after a non-ASCII letter when maskSecrets then the key is masked and the letter kept', () => {
+  /**
+   * Scenario: word boundaries are ASCII-only, so a key after a non-ASCII letter is still masked.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a key immediately after a non-ASCII letter,
+   * When maskSecrets runs,
+   * Then the letter is kept and the key is replaced.
+   */
+  // -- Given --
+  const text = '\u00e9sk-ant-' + 'abcdefgh' + '12345678';
+
+  // -- When / Then --
+  assert.equal(maskSecrets(text).text, '\u00e9[REDACTED_KEY]');
 });

@@ -25,8 +25,8 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     ),
     (
         re.compile(
-            r"api[_-]?key[\"']?\s*[:=]\s*(?:\"[^\"\r\n]*\"|\'[^\'\r\n]*\'|[\"\']?[^\"\'&\s]+)",
-            re.IGNORECASE,
+            r"api[_-]?key[\"']?\s*[:=]\s*(?:\"[^\"]*\"|\'[^\']*\'|[\"\'][^\n]*|[^\"\'&\s]+)",
+            re.IGNORECASE | re.ASCII,
         ),
         "api_key=[REDACTED]",
     ),
@@ -39,8 +39,8 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     ),
     (
         re.compile(
-            r"password[\"']?\s*[:=]\s*(?:\"[^\"\r\n]*\"|\'[^\'\r\n]*\'|[\"\']?[^\"\'&\s]+)",
-            re.IGNORECASE,
+            r"password[\"']?\s*[:=]\s*(?:\"[^\"]*\"|\'[^\']*\'|[\"\'][^\n]*|[^\"\'&\s]+)",
+            re.IGNORECASE | re.ASCII,
         ),
         "password=[REDACTED]",
     ),
