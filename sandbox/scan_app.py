@@ -29,6 +29,7 @@ _SANDBOX_DIR = Path(__file__).resolve().parent
 if str(_SANDBOX_DIR) not in sys.path:
     sys.path.insert(0, str(_SANDBOX_DIR))
 
+from redact import redact_row  # noqa: E402
 from scanners import TESSL_SOURCES, run_all_scanners, scanner_subprocess_env  # noqa: E402
 
 app = modal.App("agentvetter-scan")
@@ -124,6 +125,7 @@ def _safe_insert(supabase, table: str, row: dict, context: str) -> None:
     columns that existed in every schema version.  ``detail`` data is folded
     into the ``detail`` field (truncated) so scan context survives the fallback.
     """
+    row = redact_row(row)
     try:
         supabase.table(table).insert(row).execute()
     except Exception as exc:
@@ -152,7 +154,7 @@ def _safe_insert(supabase, table: str, row: dict, context: str) -> None:
 def _safe_update(supabase, table: str, data: dict, eq_col: str, eq_val: str, context: str) -> None:
     """Wrap a Supabase update, converting PostgREST errors to RuntimeError."""
     try:
-        supabase.table(table).update(data).eq(eq_col, eq_val).execute()
+        supabase.table(table).update(redact_row(data)).eq(eq_col, eq_val).execute()
     except Exception as exc:
         raise _to_runtime_error(exc, context) from exc
 
@@ -244,7 +246,7 @@ def _scan_item_inner(
     def _persist_scanner_row(row: dict, *, completed: bool = False) -> None:
         """Upsert one scan_run_scanners row (supports mid-group Tessl progress)."""
         now = datetime.now(UTC).isoformat()
-        payload = {**row, "scan_run_id": scan_run_id}
+        payload = redact_row({**row, "scan_run_id": scan_run_id})
         if completed:
             payload["completed_at"] = now
         try:
