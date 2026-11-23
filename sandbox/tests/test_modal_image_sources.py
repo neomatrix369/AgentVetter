@@ -34,4 +34,6 @@ def test_given_scan_app_imports_when_compared_to_image_then_every_sandbox_module
 
     ### Then
     assert needed, "expected scan_app.py to import at least one sandbox module"
-    assert needed - baked == set(), f"sandbox modules not baked into the Modal image: {needed - baked}"
+    assert needed - baked == set(), (
+        f"sandbox modules not baked into the Modal image: {needed - baked}"
+    )
