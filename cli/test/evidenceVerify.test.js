@@ -453,3 +453,20 @@ test('given a byte-order mark as the separator when maskSecrets then Bearer and 
   assert.equal(maskSecrets('Bearer\ufefftok').text, 'Bearer [REDACTED]');
   assert.equal(maskSecrets('password:\ufeff"correct horse"').text, 'password=[REDACTED]');
 });
+
+test('given control and zero-width separators when maskSecrets then Bearer tokens are masked', () => {
+  /**
+   * Scenario: NEL, unit-separator and zero-width-space characters separate a Bearer token as whitespace.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a Bearer token separated by NEL, a unit separator, or a zero-width space,
+   * When maskSecrets runs,
+   * Then each output is exactly the placeholder.
+   */
+  // -- Given / When / Then --
+  assert.equal(maskSecrets('Bearer\u0085tok').text, 'Bearer [REDACTED]');
+  assert.equal(maskSecrets('Bearer\u001ftok').text, 'Bearer [REDACTED]');
+  assert.equal(maskSecrets('Bearer\u200btok').text, 'Bearer [REDACTED]');
+});

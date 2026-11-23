@@ -195,3 +195,18 @@ def test_given_byte_order_mark_as_separator_when_redacted_then_bearer_and_passwo
     ### Given / When / Then
     assert redact.redact_secrets("Bearer\ufefftok") == "Bearer [REDACTED]"
     assert redact.redact_secrets('password:\ufeff"correct horse"') == "password=[REDACTED]"
+
+
+def test_given_control_and_zero_width_separators_when_redacted_then_bearer_tokens_are_masked() -> (
+    None
+):
+    """Scenario: NEL, unit-separator and zero-width-space characters separate a Bearer token as whitespace.
+
+    Slice: stored-evidence masking (PR #212 review follow-up).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given / When / Then
+    assert redact.redact_secrets("Bearer\x85tok") == "Bearer [REDACTED]"
+    assert redact.redact_secrets("Bearer\x1ftok") == "Bearer [REDACTED]"
+    assert redact.redact_secrets("Bearer\u200btok") == "Bearer [REDACTED]"

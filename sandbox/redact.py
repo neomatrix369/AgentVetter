@@ -16,7 +16,7 @@ from typing import Any
 EVIDENCE_FIELDS: tuple[str, ...] = ("snippet", "console_output", "detail", "message")
 
 # One explicit whitespace set, mirrored in cli/src/evidenceVerify.js, so both sides agree on Unicode spaces.
-_SECRET_WS = r"\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff"
+_SECRET_WS = r"\t\n\v\f\r \x1c-\x1f\x85\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\u200b\u2060\ufeff"
 _SECRET_VALUE = r"(?:\"[^\"]*\"|'[^']*'|[\"'][^\n]*|[^\"'&" + _SECRET_WS + r"]+)"
 _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     (
