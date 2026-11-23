@@ -313,7 +313,7 @@ def verify_artifacts(
     resolve: ResolveFn,
     fetch_status: FetchStatusFn,
     validity_days: int = 14,
-    threshold: str = "red",
+    threshold: str,
     now: NowFn | None = None,
 ) -> VerifyResult:
     """Verify every name in one pass; never stop at the first issue.

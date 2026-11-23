@@ -73,7 +73,7 @@ def test_given_no_now_inject_when_verify_then_uses_clock() -> None:
         )
 
     ### When
-    actual = verify_artifacts(["x"], resolve=resolve, fetch_status=fetch_status)
+    actual = verify_artifacts(["x"], resolve=resolve, threshold="red", fetch_status=fetch_status)
 
     ### Then
     assert actual.artifacts[0].state == "fresh"

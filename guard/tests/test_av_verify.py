@@ -74,6 +74,7 @@ def test_given_two_names_when_verify_then_one_pass_table_and_json() -> None:
     actual = verify_artifacts(
         names,
         resolve=resolve,
+        threshold="red",
         fetch_status=fetch_status,
         validity_days=14,
         now=lambda: NOW,
@@ -146,6 +147,7 @@ def test_given_state_fixture_when_verify_then_contract_state(
     actual = verify_artifacts(
         [name],
         resolve=resolve,
+        threshold="red",
         fetch_status=fetch_status,
         validity_days=14,
         now=lambda: NOW,
@@ -206,6 +208,7 @@ def test_given_quality_score_when_verify_then_cell_is_n_over_100_or_emdash(
     actual = verify_artifacts(
         ["artifact"],
         resolve=resolve,
+        threshold="red",
         fetch_status=fetch_status,
         validity_days=14,
         now=lambda: NOW,
@@ -246,6 +249,7 @@ def test_given_blocked_rows_when_verify_then_footer_once_not_in_notes() -> None:
     actual = verify_artifacts(
         ["vuln-skill", "new-skill"],
         resolve=resolve,
+        threshold="red",
         fetch_status=fetch_status,
         validity_days=14,
         now=lambda: NOW,
@@ -288,6 +292,7 @@ def test_given_unscanned_when_verify_then_offers_av_scan() -> None:
     actual = verify_artifacts(
         [name],
         resolve=resolve,
+        threshold="red",
         fetch_status=fetch_status,
         validity_days=14,
         now=lambda: NOW,
@@ -325,6 +330,7 @@ def test_given_unresolved_name_when_verify_then_human_not_found_message() -> Non
     actual = verify_artifacts(
         [name],
         resolve=resolve,
+        threshold="red",
         fetch_status=fetch_status,
         validity_days=14,
         now=lambda: NOW,
