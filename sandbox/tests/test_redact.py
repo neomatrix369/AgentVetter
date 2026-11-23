@@ -63,6 +63,12 @@ def test_given_row_with_evidence_when_redacted_then_only_evidence_fields_change(
 
 
 def test_given_api_key_assignment_when_redacted_then_value_is_masked() -> None:
+    """Scenario: an api_key assignment in evidence is masked.
+
+    Slice: evidence redaction (PR #212 review follow-up).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
     ### Given
     value = "abc" + "def123456"
     text = 'api_key = "' + value + '"'

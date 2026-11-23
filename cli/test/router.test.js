@@ -715,6 +715,8 @@ test('given model reasoning quotes a secret when routing persists then the store
   /**
    * Scenario: a secret quoted in SIE reasoning is not stored in the anon-readable findings table.
    * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored routing evidence never carries raw secrets and stays readable
    *
    * Given SIE reasoning contains an API key-looking value,
    * When routing writes the routing_review finding,
@@ -745,6 +747,8 @@ test('given a quoted Bearer phrase in reasoning when routing persists then the s
   /**
    * Scenario: masking a Bearer phrase inside reasoning keeps the stored finding valid JSON.
    * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored routing evidence never carries raw secrets and stays readable
    *
    * Given SIE reasoning quotes a Bearer phrase followed by a closing quote,
    * When routing writes the routing_review finding,
