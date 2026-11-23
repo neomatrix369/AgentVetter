@@ -15,8 +15,14 @@ from typing import Any
 # Evidence columns that can carry raw scanned text.
 EVIDENCE_FIELDS: tuple[str, ...] = ("snippet", "console_output", "detail", "message")
 
+# One explicit whitespace set, mirrored in cli/src/evidenceVerify.js, so both sides agree on Unicode spaces.
+_SECRET_WS = r"\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff"
+_SECRET_VALUE = r"(?:\"[^\"]*\"|'[^']*'|[\"'][^\n]*|[^\"'&" + _SECRET_WS + r"]+)"
 _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
-    (re.compile(r"Bearer\s+\S+", re.IGNORECASE), "Bearer [REDACTED]"),
+    (
+        re.compile(r"Bearer[" + _SECRET_WS + r"]+[^" + _SECRET_WS + r"]+", re.IGNORECASE),
+        "Bearer [REDACTED]",
+    ),
     (
         re.compile(
             r"\b(sk-|sk-ant-|ospy_|tsi_|dashscope)[A-Za-z0-9_-]{8,}\b", re.IGNORECASE | re.ASCII
@@ -25,7 +31,7 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     ),
     (
         re.compile(
-            r"api[_-]?key[\"']?\s*[:=]\s*(?:\"[^\"]*\"|\'[^\']*\'|[\"\'][^\n]*|[^\"\'&\s]+)",
+            r"api[_-]?key[\"']?[" + _SECRET_WS + r"]*[:=][" + _SECRET_WS + r"]*" + _SECRET_VALUE,
             re.IGNORECASE,
         ),
         "api_key=[REDACTED]",
@@ -39,7 +45,7 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     ),
     (
         re.compile(
-            r"password[\"']?\s*[:=]\s*(?:\"[^\"]*\"|\'[^\']*\'|[\"\'][^\n]*|[^\"\'&\s]+)",
+            r"password[\"']?[" + _SECRET_WS + r"]*[:=][" + _SECRET_WS + r"]*" + _SECRET_VALUE,
             re.IGNORECASE,
         ),
         "password=[REDACTED]",

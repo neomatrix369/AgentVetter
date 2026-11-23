@@ -22,15 +22,18 @@ const SCAN_EXTS = new Set(['.md', '.txt', '.json', '.yml', '.yaml', '.py', '.js'
 const INSTRUCTION_RE = /ignore (all )?(prior|previous) instructions|system override|from now on,?\s+always|do not mention this instruction/i;
 const ZERO_WIDTH_RE = /[\u200B-\u200D\uFEFF\u2060]/;
 const BASE64_RE = /\b[A-Za-z0-9+/]{32,}={0,2}\b/g;
+// One explicit whitespace set, mirrored in sandbox/redact.py, so both sides agree on Unicode spaces.
+const SECRET_WS = String.raw`\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff`;
+const SECRET_VALUE = String.raw`(?:"[^"]*"|'[^']*'|["'][^\n]*|[^"'&${SECRET_WS}]+)`;
 const SECRET_RULES = [
-  { re: /Bearer\s+\S+/gi, to: 'Bearer [REDACTED]' },
+  { re: new RegExp(String.raw`Bearer[${SECRET_WS}]+[^${SECRET_WS}]+`, 'gi'), to: 'Bearer [REDACTED]' },
   { re: /\b(sk-|sk-ant-|ospy_|tsi_|dashscope)[A-Za-z0-9_-]{8,}\b/gi, to: '[REDACTED_KEY]' },
-  { re: /api[_-]?key["']?\s*[:=]\s*(?:"[^"]*"|'[^']*'|["'][^\n]*|[^"'&\s]+)/gi, to: 'api_key=[REDACTED]' },
+  { re: new RegExp(String.raw`api[_-]?key["']?[${SECRET_WS}]*[:=][${SECRET_WS}]*${SECRET_VALUE}`, 'gi'), to: 'api_key=[REDACTED]' },
   { re: /\bgh[pousr]_[A-Za-z0-9]{20,}\b/g, to: '[REDACTED_TOKEN]' },
   { re: /\bgithub_pat_[A-Za-z0-9_]{20,}\b/g, to: '[REDACTED_TOKEN]' },
   { re: /\bAKIA[0-9A-Z]{16}\b/g, to: '[REDACTED_TOKEN]' },
   { re: /\b(sk|rk)[_-](live|test)[_-][A-Za-z0-9]{8,}\b/gi, to: '[REDACTED_KEY]' },
-  { re: /password["']?\s*[:=]\s*(?:"[^"]*"|'[^']*'|["'][^\n]*|[^"'&\s]+)/gi, to: 'password=[REDACTED]' },
+  { re: new RegExp(String.raw`password["']?[${SECRET_WS}]*[:=][${SECRET_WS}]*${SECRET_VALUE}`, 'gi'), to: 'password=[REDACTED]' },
 ];
 
 function isInsideRoot(root, candidate) {

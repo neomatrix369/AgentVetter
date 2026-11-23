@@ -181,3 +181,17 @@ def test_given_non_breaking_space_after_password_label_when_redacted_then_quoted
 
     ### When / Then
     assert redact.redact_secrets(text) == "password=[REDACTED]"
+
+
+def test_given_byte_order_mark_as_separator_when_redacted_then_bearer_and_password_are_masked() -> (
+    None
+):
+    """Scenario: a zero-width no-break space counts as whitespace in both the CLI and the sandbox.
+
+    Slice: stored-evidence masking (PR #212 review follow-up).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given / When / Then
+    assert redact.redact_secrets("Bearer\ufefftok") == "Bearer [REDACTED]"
+    assert redact.redact_secrets('password:\ufeff"correct horse"') == "password=[REDACTED]"

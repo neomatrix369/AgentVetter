@@ -437,3 +437,19 @@ test('given a non-breaking space after a password label when maskSecrets then th
   // -- When / Then --
   assert.equal(maskSecrets(text).text, 'password=[REDACTED]');
 });
+
+test('given a byte-order mark as the separator when maskSecrets then Bearer and password values are masked', () => {
+  /**
+   * Scenario: a zero-width no-break space counts as whitespace in both the CLI and the sandbox.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a Bearer token and a password separated by a byte-order mark,
+   * When maskSecrets runs,
+   * Then both outputs are exactly the placeholders.
+   */
+  // -- Given / When / Then --
+  assert.equal(maskSecrets('Bearer\ufefftok').text, 'Bearer [REDACTED]');
+  assert.equal(maskSecrets('password:\ufeff"correct horse"').text, 'password=[REDACTED]');
+});
