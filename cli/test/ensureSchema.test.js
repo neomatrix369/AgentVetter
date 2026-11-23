@@ -20,6 +20,16 @@ test('isMissingSchemaError detects PostgREST missing-table shapes', () => {
   assert.equal(isMissingSchemaError(null), false);
 });
 
+test('given remote host with localhost or pooler text in password or query then TLS stays verified', () => {
+  // -- Given --
+  const remoteWithLocalhostPassword = 'postgresql://u:localhost@db.example.supabase.co:5432/postgres';
+  const remoteWithPoolerQuery = 'postgresql://u@evil.example.com/postgres?x=.pooler.supabase.com';
+
+  // -- When / Then --
+  assert.deepEqual(pgSslConfig(remoteWithLocalhostPassword), { rejectUnauthorized: true });
+  assert.deepEqual(pgSslConfig(remoteWithPoolerQuery), { rejectUnauthorized: true });
+});
+
 test('pgSslConfig verifies TLS for remote Postgres and disables SSL on localhost', () => {
   assert.equal(pgSslConfig('postgresql://postgres@localhost:5432/postgres'), false);
   assert.equal(pgSslConfig('postgresql://postgres@127.0.0.1:5432/postgres'), false);

@@ -104,44 +104,10 @@ STDIN_FILE="$(mktemp "${TMPDIR:-/tmp}/agentvetter-hook-stdin.XXXXXX")"
 OUT_FILE="$(mktemp "${TMPDIR:-/tmp}/agentvetter-hook-out.XXXXXX")"
 cat > "$STDIN_FILE"
 
-# ── 2b. Fast-path ordinary Bash (no skills-path touch) ───────────────────────
-#      Matcher includes Bash so …/skills/<name>/install.sh is gated, but most
-#      Bash calls are unrelated. Skip the uv/Supabase path when neither the
-#      command nor the payload cwd references a skills locus.
-BASH_FAST="$(python3 -c '
-import json, os, sys
-
-with open(sys.argv[1], encoding="utf-8") as f:
-    payload = json.load(f)
-if not isinstance(payload, dict):
-    print("check")
-    raise SystemExit(0)
-if (payload.get("tool_name") or "") != "Bash":
-    print("check")
-    raise SystemExit(0)
-tool_input = payload.get("tool_input")
-cmd = ""
-if isinstance(tool_input, dict) and isinstance(tool_input.get("command"), str):
-    cmd = tool_input["command"]
-cwd = payload.get("cwd") if isinstance(payload.get("cwd"), str) else ""
-home_skills = os.path.join(os.path.expanduser("~"), ".claude", "skills")
-markers = (
-    "/.claude/skills/",
-    "/.claude/skills",
-    "~/.claude/skills",
-    home_skills,
-)
-blob = cmd + "\n" + cwd
-if any(m in blob for m in markers):
-    print("check")
-else:
-    print("allow")
-' "$STDIN_FILE" 2>/dev/null)" || BASH_FAST="check"
-
-if [ "$BASH_FAST" = "allow" ]; then
-  emit_allow
-  exit 0
-fi
+# ── 2b. Every Bash call goes to the guard ──────────────────────────────────
+#      The old marker-string fast path allowed `cd $D/skills/x && bash
+#      install.sh`: variables, ~ and quote-splitting hide the skills path from
+#      a substring test. Bash is therefore always checked by entry.py.
 
 "$UV_BIN" run --project "$CFG_REPO_ROOT" --extra guard python "$ENTRY_SHIM" \
   < "$STDIN_FILE" > "$OUT_FILE" &

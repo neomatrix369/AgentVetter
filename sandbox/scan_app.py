@@ -527,7 +527,8 @@ def _acquire_target(
 
 def _clone_repo(url: str, workdir: str):
     result = subprocess.run(
-        ["git", "clone", "--depth", "1", "--single-branch", url, workdir],
+        # "--" stops a target that starts with "-" being parsed as a git option.
+        ["git", "clone", "--depth", "1", "--single-branch", "--", url, workdir],
         capture_output=True,
         text=True,
         timeout=_CLONE_TIMEOUT,
