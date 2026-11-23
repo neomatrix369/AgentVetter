@@ -32,6 +32,12 @@ def _statuses_written_by_scanners() -> set[str]:
 
 
 def test_given_schema_constraint_when_read_then_it_lists_the_known_statuses() -> None:
+    """Scenario: the schema constraint lists the known statuses.
+
+    Slice: status contract parity.
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Sandbox statuses match the database contract
+    """
     ### Given / When
     allowed = _db_allowed_statuses()
 
@@ -40,6 +46,12 @@ def test_given_schema_constraint_when_read_then_it_lists_the_known_statuses() ->
 
 
 def test_given_scanner_writes_when_compared_to_schema_then_every_status_is_allowed() -> None:
+    """Scenario: every scanner status is allowed by the schema.
+
+    Slice: status contract parity.
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Sandbox statuses match the database contract
+    """
     ### Given
     allowed = _db_allowed_statuses()
 

@@ -34,6 +34,14 @@ Split keys by trust boundary.
 Anon SELECT is `using (true)` — any holder of the project anon key can read
 all scan rows. Treat the Supabase project as a single-operator trust domain.
 
+### Amendment (2026-11-23): judge panel tables are not anon-readable
+
+`judge_panel_runs` and `judge_panel_judgements` hold raw model responses that
+can echo scanned secrets. The dashboard never reads them, so they have no anon
+policy or GRANT and are service-role only. Finding snippets and scanner console
+output stay anon-readable (the dashboard shows them), but the sandbox masks
+secret-like values before writing them (`sandbox/redact.py`).
+
 ## Consequences
 
 - Leaking the anon key leaks findings for that project; leaking service role

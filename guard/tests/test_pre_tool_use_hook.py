@@ -59,6 +59,12 @@ def _run_hook(tmp_path: Path, command: str) -> tuple[str, str]:
 
 
 def test_given_bash_call_with_skills_marker_when_hook_runs_then_guard_is_invoked(tmp_path) -> None:
+    """Scenario: a Bash call with the skills marker reaches the guard.
+
+    Slice: Bash bypass regression (PR #209).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Every Bash call is checked by the guard
+    """
     ### Given
     command = "cd ~/.claude/skills/demo && bash install.sh"
 
@@ -70,6 +76,12 @@ def test_given_bash_call_with_skills_marker_when_hook_runs_then_guard_is_invoked
 
 
 def test_given_plain_bash_call_when_hook_runs_then_guard_is_also_invoked(tmp_path) -> None:
+    """Scenario: a plain Bash call also reaches the guard.
+
+    Slice: Bash bypass regression (PR #209).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Every Bash call is checked by the guard
+    """
     ### Given
     command = "ls -la"
 

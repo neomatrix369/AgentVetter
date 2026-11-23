@@ -1,4 +1,5 @@
 import { getSupabase } from './supabaseClient.js';
+import { maskSecrets } from './evidenceVerify.js';
 
 const SIE_TIMEOUT_MS = 15000;
 const MS_TIMEOUT_MS = 30000;
@@ -172,6 +173,16 @@ async function fetchItemData(supabase, scanRun) {
  * routing_review / decision rows must remain so the dashboard keeps
  * "Scan → SIE → ■" (or Model Studio) strips.
  */
+/** Mask string leaves only, so masking can never break the JSON structure. */
+function maskEnvelopeStrings(value) {
+  if (typeof value === 'string') return maskSecrets(value).text;
+  if (Array.isArray(value)) return value.map(maskEnvelopeStrings);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, maskEnvelopeStrings(v)]));
+  }
+  return value;
+}
+
 async function replaceRouterFinding(supabase, scanRun, severity, category, envelope) {
   const { error: deleteError } = await supabase
     .from('findings')
@@ -189,7 +200,8 @@ async function replaceRouterFinding(supabase, scanRun, severity, category, envel
     severity,
     category,
     scanner_source: 'tiered_router',
-    message: JSON.stringify(envelope),
+    // Model reasoning can quote secrets from scanned code; mask before the anon-readable table.
+    message: JSON.stringify(maskEnvelopeStrings(envelope)),
   });
   if (error) {
     console.error(`[critical] Insert failed for scan_run ${scanRun.id}: ${error.message}`);

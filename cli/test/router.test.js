@@ -710,3 +710,66 @@ test('given replace delete fails when writing routing_review then error propagat
   );
   assert.equal(supabase.calls.inserts.length, 0);
 });
+
+test('given model reasoning quotes a secret when routing persists then the stored message is masked', async () => {
+  /**
+   * Scenario: a secret quoted in SIE reasoning is not stored in the anon-readable findings table.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored routing evidence never carries raw secrets and stays readable
+   *
+   * Given SIE reasoning contains an API key-looking value,
+   * When routing writes the routing_review finding,
+   * Then the stored message omits the value and still parses as JSON.
+   */
+  // -- Given --
+  const fakeKey = 'sk-' + 'live-4f2b9abcdef';
+  const supabase = createRouterSupabaseStub();
+
+  // -- When --
+  await withRouterEnv(() => runRoute('batch-1', {
+    getSupabaseFn: () => supabase,
+    callSieFn: async () => ({
+      escalate: false,
+      low_confidence: false,
+      reasoning: `The scanned file hardcodes ${fakeKey} in config.`,
+    }),
+  }));
+
+  // -- Then --
+  const stored = supabase.calls.inserts[0].message;
+  assert.ok(!stored.includes(fakeKey), 'secret must not be stored');
+  assert.ok(stored.includes('[REDACTED_KEY]'));
+  assert.ok(JSON.parse(stored).reasoning, 'envelope still carries its reasoning');
+});
+
+test('given a quoted Bearer phrase in reasoning when routing persists then the stored message still parses', async () => {
+  /**
+   * Scenario: masking a Bearer phrase inside reasoning keeps the stored finding valid JSON.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored routing evidence never carries raw secrets and stays readable
+   *
+   * Given SIE reasoning quotes a Bearer phrase followed by a closing quote,
+   * When routing writes the routing_review finding,
+   * Then the stored message parses and omits the token.
+   */
+  // -- Given --
+  const token = 'abc.def.' + 'ghi';
+  const supabase = createRouterSupabaseStub();
+
+  // -- When --
+  await withRouterEnv(() => runRoute('batch-1', {
+    getSupabaseFn: () => supabase,
+    callSieFn: async () => ({
+      escalate: false,
+      low_confidence: false,
+      reasoning: `He said "Bearer ${token}" and moved on.`,
+    }),
+  }));
+
+  // -- Then --
+  const stored = supabase.calls.inserts[0].message;
+  assert.ok(!stored.includes(token), 'token must not be stored');
+  assert.ok(JSON.parse(stored).reasoning, 'stored message must parse as JSON');
+});

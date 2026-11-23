@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- Judge panel tables (`judge_panel_runs`, `judge_panel_judgements`) are no longer
+  readable with the anon key. They hold raw model responses that can echo scanned
+  secrets, and the dashboard never reads them.
+- Secret-like values are masked before finding snippets, scanner console output and
+  details are stored. Previously they were masked only when printed by the CLI.
+  Existing rows are not backfilled.
+
 ### Added
 - Monk Kit PoC (slice 58, ADR-0001): `MANIFEST`, `common.yaml`, `latest.yaml`,
   `v1.0.0.yaml` and a `bootstrap/` image that provisions managed Supabase,

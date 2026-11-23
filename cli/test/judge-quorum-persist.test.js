@@ -29,7 +29,7 @@ test('given two answered panel judges when coerceFinal then the final verdict st
   assert.equal(coerceFinal(finalJudge, judgements).verdict, 'true_positive');
 });
 
-function fakeJudgeSupabase({ runs, findings, items, priorPanelRuns = [] }) {
+function fakeJudgeSupabase({ runs, findings, items, priorPanelRuns = [], failJudgementInsert = false }) {
   const inserted = { panel_runs: [], judgements: [], deleted: [] };
   return {
     inserted,
@@ -50,7 +50,7 @@ function fakeJudgeSupabase({ runs, findings, items, priorPanelRuns = [] }) {
           if (table === 'judge_panel_judgements') inserted.judgements.push(...rows);
           return {
             select() { return { single: async () => ({ data: { id: 'panel-1' }, error: null }) }; },
-            then: (resolve) => resolve({ error: null }),
+            then: (resolve) => resolve({ error: failJudgementInsert && table === 'judge_panel_judgements' ? { message: 'boom' } : null }),
           };
         },
       };
@@ -101,7 +101,13 @@ test('given a panel run with judgements when persistPanelRun then run and judgem
   assert.equal(supabase.inserted.judgements[0].slot, 1);
 });
 
-test('given an earlier panel run for the same finding when persistPanelRun then the old run and its judgements are removed first', async () => {
+/**
+ * Scenario: an earlier panel run for a finding is deleted when a new run is persisted.
+ * Slice: judge rerun ordering (PR #212 review follow-up).
+ * CONTRACT_SHAPE: bounded-change
+ * Outcome anchor: A judge rerun never leaves a finding without its last verdict
+ */
+test('given an earlier panel run for the same finding when persistPanelRun then the old run and its judgements are deleted', async () => {
   // -- Given --
   const supabase = fakeJudgeSupabase({ priorPanelRuns: [{ id: 'old-1' }] });
   const panelRun = {
@@ -119,4 +125,25 @@ test('given an earlier panel run for the same finding when persistPanelRun then 
     { table: 'judge_panel_runs', ids: ['old-1'] },
   ]);
   assert.equal(supabase.inserted.panel_runs.length, 1);
+  assert.equal(supabase.inserted.deleted.length, 2);
+});
+
+/**
+ * Scenario: a failed judgement insert keeps the earlier verdict for the finding.
+ * Slice: judge rerun ordering (PR #212 review follow-up).
+ * CONTRACT_SHAPE: bounded-change
+ * Outcome anchor: A judge rerun never leaves a finding without its last verdict
+ */
+test('given a failed new judgement insert when persistPanelRun then the earlier verdict is kept', async () => {
+  // -- Given --
+  const supabase = fakeJudgeSupabase({ priorPanelRuns: [{ id: 'old-1' }], failJudgementInsert: true });
+  const panelRun = {
+    scan_run_id: 'run-1', item_id: 'item-1', finding_id: 'f-1',
+    answered_count: 1, total_judges: 1, disagreement: false, final_verdict: 'needs_review',
+    judgements: [{ slot: 1, model: 'm1', status: 'answered', verdict: 'true_positive', confidence: 0.9 }],
+  };
+
+  // -- When / Then --
+  await assert.rejects(() => persistPanelRun(supabase, panelRun));
+  assert.deepEqual(supabase.inserted.deleted, []);
 });

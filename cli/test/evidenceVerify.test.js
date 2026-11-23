@@ -317,3 +317,156 @@ test('formatEvidenceReport: unverified findings are labelled and not confirmed',
   assert.doesNotMatch(actual, /independently confirmed/);
   assert.match(actual, /hidden_instruction/);
 });
+
+test('given GitHub, AWS, live-key and password formats when maskSecrets then each value becomes its placeholder', () => {
+  /**
+   * Scenario: common credential formats in evidence text are replaced by placeholders.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given one line per credential format, each surrounded by plain text,
+   * When maskSecrets runs,
+   * Then each value is replaced and the surrounding text is kept.
+   */
+  // -- Given --
+  const cases = [
+    ['gh' + 'p_' + 'A1b2C3d4E5f6G7h8I9j0K1l2M3n4', '[REDACTED_TOKEN]'],
+    ['AKIA' + 'IOSFODNN7EXAMPLE', '[REDACTED_TOKEN]'],
+    ['sk' + '_live_' + 'abcdef12345678', '[REDACTED_KEY]'],
+    ['pass' + 'word=' + 'hunter2secret', 'password=[REDACTED]'],
+  ];
+
+  // -- When / Then --
+  for (const [raw, placeholder] of cases) {
+    assert.equal(maskSecrets(`before ${raw} after`).text, `before ${placeholder} after`);
+  }
+});
+
+test('given a quoted multi-word api_key and password when maskSecrets then the whole value is masked', () => {
+  /**
+   * Scenario: a quoted value with spaces is masked to its closing quote, not just its first word.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given an api_key and a password whose quoted values contain spaces,
+   * When maskSecrets runs,
+   * Then every word of each value is removed.
+   */
+  // -- Given --
+  const text = 'api_key = "alpha' + ' beta gamma" and password: "one' + ' two three"';
+
+  // -- When --
+  const out = maskSecrets(text).text;
+
+  // -- Then --
+  for (const word of ['alpha', 'beta', 'gamma', 'one', 'two', 'three']) {
+    assert.ok(!out.includes(word), `leaked word: ${word}`);
+  }
+});
+
+test('given an unterminated quote with spaces when maskSecrets then the rest of the line is masked', () => {
+  /**
+   * Scenario: a password with no closing quote is masked to the end of its line.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a password whose opening quote never closes and whose value has spaces,
+   * When maskSecrets runs,
+   * Then the output is exactly the placeholder.
+   */
+  // -- Given --
+  const text = 'password="correct horse battery';
+
+  // -- When / Then --
+  assert.equal(maskSecrets(text).text, 'password=[REDACTED]');
+});
+
+test('given an api_key value spanning a newline when maskSecrets then the whole value is masked', () => {
+  /**
+   * Scenario: a quoted value that spans lines is masked in full, including its second line.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a quoted api_key whose value contains a newline,
+   * When maskSecrets runs,
+   * Then the output is exactly the placeholder.
+   */
+  // -- Given --
+  const text = 'api_key="sk-part1\nsecret2"';
+
+  // -- When / Then --
+  assert.equal(maskSecrets(text).text, 'api_key=[REDACTED]');
+});
+
+test('given a key after a non-ASCII letter when maskSecrets then the key is masked and the letter kept', () => {
+  /**
+   * Scenario: word boundaries are ASCII-only, so a key after a non-ASCII letter is still masked.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a key immediately after a non-ASCII letter,
+   * When maskSecrets runs,
+   * Then the letter is kept and the key is replaced.
+   */
+  // -- Given --
+  const text = '\u00e9sk-ant-' + 'abcdefgh' + '12345678';
+
+  // -- When / Then --
+  assert.equal(maskSecrets(text).text, '\u00e9[REDACTED_KEY]');
+});
+
+test('given a non-breaking space after a password label when maskSecrets then the quoted value is masked', () => {
+  /**
+   * Scenario: Unicode whitespace after a label is matched the same way by the CLI and the sandbox.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a password label followed by a non-breaking space and a quoted value,
+   * When maskSecrets runs,
+   * Then the output is exactly the placeholder.
+   */
+  // -- Given --
+  const text = 'password:\u00a0"correct horse"';
+
+  // -- When / Then --
+  assert.equal(maskSecrets(text).text, 'password=[REDACTED]');
+});
+
+test('given a byte-order mark as the separator when maskSecrets then Bearer and password values are masked', () => {
+  /**
+   * Scenario: a zero-width no-break space counts as whitespace in both the CLI and the sandbox.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a Bearer token and a password separated by a byte-order mark,
+   * When maskSecrets runs,
+   * Then both outputs are exactly the placeholders.
+   */
+  // -- Given / When / Then --
+  assert.equal(maskSecrets('Bearer\ufefftok').text, 'Bearer [REDACTED]');
+  assert.equal(maskSecrets('password:\ufeff"correct horse"').text, 'password=[REDACTED]');
+});
+
+test('given control and zero-width separators when maskSecrets then Bearer tokens are masked', () => {
+  /**
+   * Scenario: NEL, unit-separator and zero-width-space characters separate a Bearer token as whitespace.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a Bearer token separated by NEL, a unit separator, or a zero-width space,
+   * When maskSecrets runs,
+   * Then each output is exactly the placeholder.
+   */
+  // -- Given / When / Then --
+  assert.equal(maskSecrets('Bearer\u0085tok').text, 'Bearer [REDACTED]');
+  assert.equal(maskSecrets('Bearer\u001ftok').text, 'Bearer [REDACTED]');
+  assert.equal(maskSecrets('Bearer\u200btok').text, 'Bearer [REDACTED]');
+});

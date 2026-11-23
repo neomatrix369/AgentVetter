@@ -206,28 +206,30 @@ do $$ begin
   if not exists (select 1 from pg_policies where policyname = 'anon_read_findings') then
     create policy anon_read_findings          on findings           for select to anon using (true);
   end if;
-  if not exists (select 1 from pg_policies where policyname = 'anon_read_judge_panel_runs') then
-    create policy anon_read_judge_panel_runs       on judge_panel_runs       for select to anon using (true);
-  end if;
-  if not exists (select 1 from pg_policies where policyname = 'anon_read_judge_panel_judgements') then
-    create policy anon_read_judge_panel_judgements on judge_panel_judgements for select to anon using (true);
-  end if;
 end $$;
+
+-- Judge panel tables hold raw model responses that can echo scanned secrets. The dashboard
+-- never reads them, so anon has no policy and no grant. Drop the policies an earlier
+-- version created so a re-run on a live database removes them too.
+drop policy if exists anon_read_judge_panel_runs       on judge_panel_runs;
+drop policy if exists anon_read_judge_panel_judgements on judge_panel_judgements;
 
 -- PostgREST needs table GRANTs in addition to RLS policies (tables created via
 -- raw SQL as postgres do not always inherit default API grants).
 grant usage on schema public to anon, authenticated;
-grant select on table items, scan_runs, scan_run_scanners, findings,
-  judge_panel_runs, judge_panel_judgements to anon, authenticated;
+grant select on table items, scan_runs, scan_run_scanners, findings to anon, authenticated;
 grant select on dashboard_latest_runs to anon, authenticated;
 
 -- Tables the dashboard never reads. Supabase default privileges grant anon full DML on
 -- new public tables, so lock them down: RLS on with no anon policy, and no anon or
 -- authenticated grants. The CLI and sandbox use the service role, which bypasses RLS.
-alter table scan_batches enable row level security;
-alter table coverage     enable row level security;
-alter table config       enable row level security;
-revoke all on scan_batches, coverage, config from anon, authenticated;
+alter table scan_batches       enable row level security;
+alter table coverage           enable row level security;
+alter table config             enable row level security;
+alter table judge_panel_runs       enable row level security;
+alter table judge_panel_judgements enable row level security;
+revoke all on scan_batches, coverage, config, judge_panel_runs, judge_panel_judgements
+  from anon, authenticated;
 
 -- Rollup function: recompute an item's heatmap_status/risk_score from its latest scan_run.
 -- heatmap_status = worst-of actionable findings (any red → red; else any amber → amber;
