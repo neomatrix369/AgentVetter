@@ -318,27 +318,51 @@ test('formatEvidenceReport: unverified findings are labelled and not confirmed',
   assert.match(actual, /hidden_instruction/);
 });
 
-test('given GitHub, AWS, live-key and password formats when maskSecrets then each value is masked', () => {
+test('given GitHub, AWS, live-key and password formats when maskSecrets then each value becomes its placeholder', () => {
   /**
-   * Scenario: common credential formats in evidence text are masked, not only sk- keys.
+   * Scenario: common credential formats in evidence text are replaced by placeholders.
    * Slice: stored-evidence masking (PR #212 review follow-up).
    * CONTRACT_SHAPE: bounded-change
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
-   * Given text containing a GitHub token, an AWS key, an sk_live key and a password,
+   * Given one line per credential format, each surrounded by plain text,
    * When maskSecrets runs,
-   * Then none of the raw values remain.
+   * Then each value is replaced and the surrounding text is kept.
    */
   // -- Given --
-  const gh = 'gh' + 'p_' + 'A1b2C3d4E5f6G7h8I9j0K1l2M3n4';
-  const aws = 'AKIA' + 'IOSFODNN7EXAMPLE';
-  const live = 'sk' + '_live_' + 'abcdef12345678';
-  const pw = 'hunter' + '2secret';
-  const text = `token ${gh} aws ${aws} key ${live} password=${pw}`;
+  const cases = [
+    ['gh' + 'p_' + 'A1b2C3d4E5f6G7h8I9j0K1l2M3n4', '[REDACTED_TOKEN]'],
+    ['AKIA' + 'IOSFODNN7EXAMPLE', '[REDACTED_TOKEN]'],
+    ['sk' + '_live_' + 'abcdef12345678', '[REDACTED_KEY]'],
+    ['pass' + 'word=' + 'hunter2secret', 'password=[REDACTED]'],
+  ];
+
+  // -- When / Then --
+  for (const [raw, placeholder] of cases) {
+    assert.equal(maskSecrets(`before ${raw} after`).text, `before ${placeholder} after`);
+  }
+});
+
+test('given a quoted multi-word api_key and password when maskSecrets then the whole value is masked', () => {
+  /**
+   * Scenario: a quoted value with spaces is masked to its closing quote, not just its first word.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given an api_key and a password whose quoted values contain spaces,
+   * When maskSecrets runs,
+   * Then every word of each value is removed.
+   */
+  // -- Given --
+  const text = 'api_key = "alpha' + ' beta gamma" and password: "one' + ' two three"';
 
   // -- When --
   const out = maskSecrets(text).text;
 
   // -- Then --
-  for (const raw of [gh, aws, live, pw]) assert.ok(!out.includes(raw), `leaked: ${raw}`);
+  for (const word of ['alpha', 'beta', 'gamma', 'one', 'two', 'three']) {
+    assert.ok(!out.includes(word), `leaked word: ${word}`);
+  }
 });
+

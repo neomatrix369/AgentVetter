@@ -81,23 +81,43 @@ def test_given_api_key_assignment_when_redacted_then_value_is_masked() -> None:
     assert "api_key=[REDACTED]" in out
 
 
-def test_given_github_aws_live_key_and_password_when_redacted_then_values_are_masked() -> None:
-    """Scenario: common credential formats in evidence are masked, matching the CLI rules.
+def test_given_github_aws_live_key_and_password_when_redacted_then_each_value_becomes_its_placeholder() -> (
+    None
+):
+    """Scenario: common credential formats in evidence are replaced by placeholders.
 
     Slice: stored-evidence masking (PR #212 review follow-up).
     CONTRACT_SHAPE: bounded-change
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given
-    gh = "gh" + "p_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4"
-    aws = "AKIA" + "IOSFODNN7EXAMPLE"
-    live = "sk" + "_live_" + "abcdef12345678"
-    pw = "hunter" + "2secret"
-    text = f"token {gh} aws {aws} key {live} password={pw}"
+    cases = [
+        ("gh" + "p_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4", "[REDACTED_TOKEN]"),
+        ("AKIA" + "IOSFODNN7EXAMPLE", "[REDACTED_TOKEN]"),
+        ("sk" + "_live_" + "abcdef12345678", "[REDACTED_KEY]"),
+        ("pass" + "word=" + "hunter2secret", "password=[REDACTED]"),
+    ]
+
+    ### When / Then
+    for raw, placeholder in cases:
+        assert redact.redact_secrets(f"before {raw} after") == f"before {placeholder} after"
+
+
+def test_given_quoted_multi_word_api_key_and_password_when_redacted_then_whole_value_is_masked() -> (
+    None
+):
+    """Scenario: a quoted value with spaces is masked to its closing quote.
+
+    Slice: stored-evidence masking (PR #212 review follow-up).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    text = 'api_key = "alpha' + ' beta gamma" and password: "one' + ' two three"'
 
     ### When
     out = redact.redact_secrets(text)
 
     ### Then
-    for raw in (gh, aws, live, pw):
-        assert raw not in out, raw
+    for word in ("alpha", "beta", "gamma", "one", "two", "three"):
+        assert word not in out, word
