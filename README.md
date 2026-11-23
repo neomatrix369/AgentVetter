@@ -130,8 +130,8 @@ explain each decision before you make it.
    DepShield needs no keys. Add `OSSPREY_API_KEY` when you have Ossprey access
    (otherwise that adapter skips safely). For optional post-scan routing
    ([ADR-0016](docs/adr/0016-tiered-router-sie-model-studio.md)),
-   also set up [Superlinked SIE](docs/user-guide/sie-setup.md) (required for routing)
-   and optionally [Alibaba Cloud Model Studio](docs/user-guide/model-studio-setup.md)
+   also set up Superlinked SIE (required for routing)
+   and optionally Alibaba Cloud Model Studio
    (escalation only). Key map for every `.env` name: [env-vars.md](docs/user-guide/env-vars.md)
    (mirrors [`.env.example`](.env.example)).
 3. Create `.env` only after you have the values, then fill it with
@@ -208,7 +208,7 @@ stack (same names as the badges above):
 | Discover | CLI finds skills / MCP servers / packages (`agentvetter scan --dry-discover` or a real scan; Wave P package path on `main`) | Node.js CLI | [setup-commands](docs/user-guide/setup-commands.md#repository-and-cli-bootstrap) · [prerequisites](docs/user-guide/prerequisites.md#what-can-agentvetter-scan) |
 | Scan | Adapters run in an isolated sandbox; CLI prints scanner inventory, coverage ledger, and `[evidence]` honesty rows (slices 63/65/66); optional `agentvetter judge` panel (slice 67) | Modal (+ Docker), Cisco / Snyk / Tessl / DepShield / Cargo Audit / Ossprey | [modal-setup](docs/user-guide/modal-setup.md) · [env-vars](docs/user-guide/env-vars.md) |
 | Store | Findings and scan_run rows land for the dashboard | Supabase / Postgres | [supabase-setup](docs/user-guide/supabase-setup.md) |
-| Route (optional) | Every item through SIE; escalate only when signaled | Superlinked SIE → Alibaba Cloud Model Studio via `agentvetter route` / auto-route | [sie-setup](docs/user-guide/sie-setup.md) · [model-studio-setup](docs/user-guide/model-studio-setup.md) |
+| Route (optional) | Every item through SIE; escalate only when signaled | Superlinked SIE → Alibaba Cloud Model Studio via `agentvetter route` / auto-route | sie-setup · model-studio-setup |
 | Review | Heatmap, drawers, pathway strips, Escalated / SIE-only filters; Run→Report chrome on **Workflow** tab (slices 75–77 on `main` #163/#165/#169) | Dashboard (Live or Mock) | [reading-router-results](docs/user-guide/reading-router-results.md) · [screenshots](docs/screenshots/README.md) |
 
 Mock skips Discover→Scan→Store and still shows Review (plus router fixtures).
@@ -272,13 +272,13 @@ How to read strips and filters after Route:
 | Your task | Start here |
 |---|---|
 | Check tools and technical fit | [Prerequisites](docs/user-guide/prerequisites.md) |
-| Follow the Install → Live path map | [Path commands](docs/user-guide/path-commands.md) · [onboarding cheatsheet](docs/user-guide/onboarding-cheatsheet.md) |
+| Follow the Install → Live path map | Path commands · onboarding cheatsheet |
 | Create the Supabase project | [Supabase setup](docs/user-guide/supabase-setup.md) |
 | Deploy the Modal scan app | [Modal setup](docs/user-guide/modal-setup.md) |
 | Procure scanner and router `.env` keys | [Environment variables](docs/user-guide/env-vars.md) |
 | Run your first Live scan | [Quickstart](QUICKSTART.md#first-live-scan) · [setup commands](docs/user-guide/setup-commands.md) |
 | Preview Mock UI or dry-discover locally | [Optional local validation](QUICKSTART.md#validate-locally-optional) |
-| Enable SIE / Model Studio routing | [SIE setup](docs/user-guide/sie-setup.md) · [Model Studio setup](docs/user-guide/model-studio-setup.md) · [`agentvetter route`](docs/user-guide/setup-commands.md#tiered-router-optional) |
+| Enable SIE / Model Studio routing | SIE setup · Model Studio setup · [`agentvetter route`](docs/user-guide/setup-commands.md#tiered-router-optional) |
 | Interpret pathway strips / Escalated / SIE-only | [Reading router results](docs/user-guide/reading-router-results.md) |
 | Browse CLI / dashboard / Workflow screenshots | [Screenshot gallery](docs/screenshots/README.md) |
 | Smoke-test SIE or Model Studio alone | [SIE sample CLI](prototypes/sie-studio/README.md) · [Model Studio sample CLI](prototypes/model-studio/README.md) |

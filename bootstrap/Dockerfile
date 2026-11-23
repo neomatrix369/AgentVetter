@@ -1,6 +1,7 @@
 # AgentVetter cluster bootstrap image: Node for schema apply + baked-in
 # scripts/sandbox so Modal setup does not need blob mounts.
-FROM docker.io/library/node:22-bookworm
+# Pinned by digest so the base cannot change under us (bump deliberately).
+FROM docker.io/library/node:22-bookworm@sha256:e13726ca604184d7a91fcacab1fc09eefd642dc28e79ac34e85540dd93b78cfb
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -12,7 +13,7 @@ RUN apt-get update \
 # Modal CLI for non-interactive token auth + secret sync + deploy.
 # bookworm's PEP 668 requires --break-system-packages for system pip.
 # python-dotenv is required by `modal secret create --from-dotenv`.
-RUN pip3 install --no-cache-dir --break-system-packages 'modal>=0.73' 'python-dotenv'
+RUN pip3 install --no-cache-dir --break-system-packages 'modal==1.5.1' 'python-dotenv'
 
 WORKDIR /app
 
