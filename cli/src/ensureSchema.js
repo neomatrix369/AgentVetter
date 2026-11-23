@@ -46,9 +46,21 @@ export async function probeSchema(supabase = getSupabase()) {
 /** SSL options for a Postgres URL. Local servers have no TLS; remote hosts must verify the cert.
  *  Supabase pooler hosts use a self-signed chain — skip cert verification for them only. */
 export function pgSslConfig(url) {
-  if (url.includes('localhost') || url.includes('127.0.0.1')) return false;
-  if (url.includes('.pooler.supabase.com')) return { rejectUnauthorized: false }; // nosemgrep: problem-based-packs.insecure-transport.js-node.bypass-tls-verification.bypass-tls-verification
+  // Match the hostname only: substring checks on the whole URL let a password or
+  // query string steer TLS settings (e.g. a remote host with "localhost" in its password).
+  const host = pgHostname(url);
+  if (host === 'localhost' || host === '127.0.0.1') return false;
+  if (host.endsWith('.pooler.supabase.com')) return { rejectUnauthorized: false }; // nosemgrep: problem-based-packs.insecure-transport.js-node.bypass-tls-verification.bypass-tls-verification
   return { rejectUnauthorized: true };
+}
+
+/** Hostname of a Postgres URL, or '' when it cannot be parsed (then TLS stays verified). */
+function pgHostname(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return '';
+  }
 }
 
 /** True when a Postgres CHECK definition already allows items.type = package. */

@@ -34,6 +34,7 @@ are Accepted.
 | [0015](./0015-horizon-a-excludes-guard-and-drift.md) | Horizon A excludes Guard and Drift | Accepted |
 | [0016](./0016-tiered-router-sie-model-studio.md) | Tiered post-scan router via SIE and Model Studio | Accepted |
 | [0017](./0017-claude-code-agent-guard-integration.md) | Claude Code Agent Guard integration (amends ADR-0015) | Accepted |
+| [0018](./0018-agentvetter-rebrand.md) | AgentVetter rebrand (unified product + repo identity) | Accepted (amended 2026-10-03) |
 
 0002–0017 are retrospective Accepted records of decisions already visible in
 docs, git history, and production entry points.

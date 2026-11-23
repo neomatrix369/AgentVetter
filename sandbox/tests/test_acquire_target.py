@@ -193,6 +193,8 @@ def test_acquire_target_clones_git_url(tmp_path):
     assert "--depth" in args
     assert "https://github.com/org/repo.git" in args
     assert workdir in args
+    # Given a URL that starts with "-", git must not read it as an option.
+    assert args.index("--") < args.index("https://github.com/org/repo.git")
     assert os.path.isdir(workdir)
 
 

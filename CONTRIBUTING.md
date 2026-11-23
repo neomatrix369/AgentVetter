@@ -59,7 +59,7 @@ pre-commit run --all-files          # lint, mypy, bandit, xenon, vulture, pylint
 ```
 
 - **Commit:** ruff, mypy, bandit, xenon (complexity; split C/D ceiling), vulture (dead code), pylint duplicate-code, gitleaks, pytest-testmon (`sandbox/tests/`); `cli` ESLint + unit tests when `cli/` JS files staged; `prototypes/dc-dashboard` ESLint when dashboard JS files staged
-- **Push:** full pytest + coverage floor (when Python changed); `cli` unit tests + coverage (c8 ≥95%) when `cli/` changed; conditional `pip-audit --skip-editable` / npm audit;
+- **Push:** full pytest + coverage floor (when Python changed); `cli` unit tests + coverage (c8 ≥60% lines, 80% branches) when `cli/` changed; conditional `pip-audit --skip-editable` / npm audit;
   T3 gitleaks commit-range scan (only pushed commits, fast) runs warn-only —
   findings print but do not block the push; heavy SAST/SCA runs on Nightly **A** /
   Supply chain **B** (PR CI stays ultra-minimal — see below)
@@ -76,7 +76,7 @@ pre-commit run --all-files          # lint, mypy, bandit, xenon, vulture, pylint
 
 **Coverage today (VERIFIED config):** Python `sandbox/` `fail_under=95` via
 `pytest` / `testpaths = ["sandbox/tests"]` (guard omitted); CLI
-`npm run test:coverage` ≥95% lines; Live ACL
+`npm run test:coverage` ≥60% lines / 80% branches (cli/package.json); Live ACL
 `prototypes/dc-dashboard` `npm run test:coverage` ≥95% lines on the four ACL
 modules (`support.js` out of bar). Local editable `agentvetter` is skipped by
 `pip-audit --skip-editable` (not a PyPI package). Track
