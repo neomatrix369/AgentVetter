@@ -20,35 +20,32 @@ Run exactly this (do not hand-edit the file with text tools):
 
 ```bash
 python3 -c '
-import json, os
+import json, os, sys, tempfile
 
 p = os.path.expanduser("~/.agentvetter/config.json")
-defaults = {
-    "schema_version": 1,
-    "enable": True,
-    "scan_validity_days": 14,
-    "repo_root": "",
-    "cli_bin": "",
-    "env_file": "",
-    "uv_bin": "",
-}
 try:
     with open(p, encoding="utf-8") as f:
         cfg = json.load(f)
-    created = False
+    if not isinstance(cfg, dict):
+        raise ValueError("config is not a JSON object")
+except FileNotFoundError:
+    print(json.dumps({"ok": False, "reason": "missing", "action": "run `agentvetter setup-agent-hooks` first"}))
+    sys.exit(1)
 except (OSError, ValueError):
-    cfg = dict(defaults)
-    created = True
-os.makedirs(os.path.dirname(p), exist_ok=True)
+    # Never rebuild a broken config from defaults: that would silently allow every call.
+    print(json.dumps({"ok": False, "reason": "unreadable", "action": "fix or re-run `agentvetter setup-agent-hooks`; config left unchanged"}))
+    sys.exit(1)
 cfg["enable"] = False
-with open(p, "w", encoding="utf-8") as f:
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(p), prefix=".config.", suffix=".tmp")
+with os.fdopen(fd, "w", encoding="utf-8") as f:
     json.dump(cfg, f, indent=2)
     f.write("\n")
-print(json.dumps({"created": created, "enable": cfg["enable"]}))
+os.replace(tmp, p)  # atomic: a crash never leaves half-written JSON that denies every call
+print(json.dumps({"ok": True, "enable": False}))
 '
 ```
 
-If `created` is true, the config file was missing and was recreated with defaults plus `enable: false` — mention that `agentvetter setup-agent-hooks` restores the full config (repo paths are unset).
+If the output has `"ok": false`, **stop**. Tell the user enforcement was NOT disabled, show the `action` text, and do not run Step 2's OFF message. Do not create or repair the config yourself.
 
 ## Step 2 — Confirm
 
