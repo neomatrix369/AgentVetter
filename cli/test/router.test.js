@@ -769,4 +769,3 @@ test('given a quoted Bearer phrase in reasoning when routing persists then the s
   assert.ok(!stored.includes(token), 'token must not be stored');
   assert.ok(JSON.parse(stored).reasoning, 'stored message must parse as JSON');
 });
-
