@@ -1,0 +1,7 @@
+# Fake credentials in sandbox/tests/test_redact.py, introduced in commit 6498ed5
+# (first version of the redaction tests). Gitleaks scans history, so the fixed
+# file still trips the check at that commit. Pinned to commit:path:rule:line, so
+# these entries do not cover new leaks anywhere else.
+6498ed5f4f2f61405280f30eeca1f4a357a0ba3e:sandbox/tests/test_redact.py:curl-auth-header:23
+6498ed5f4f2f61405280f30eeca1f4a357a0ba3e:sandbox/tests/test_redact.py:generic-api-key:11
+6498ed5f4f2f61405280f30eeca1f4a357a0ba3e:sandbox/tests/test_redact.py:generic-api-key:43
