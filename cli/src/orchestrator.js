@@ -71,7 +71,11 @@ async function upsertItem(supabase, target) {
   const identifier = target.identifier || normalizeIdentifier(target.target);
   const name = itemNameFor(target, identifier);
   const contentHash = await contentHashFor(target, identifier);
-  const { data: byHash } = await supabase.from('items').select('*').eq('content_hash', contentHash).maybeSingle();
+  // A placeholder hash marks an item that has never completed a scan: never a cache hit.
+  const isPlaceholder = contentHash.startsWith('pending:');
+  const { data: byHash } = isPlaceholder
+    ? { data: null }
+    : await supabase.from('items').select('*').eq('content_hash', contentHash).maybeSingle();
   if (byHash) {
     // Refresh display name even on content-hash hits (e.g. card-naming contract changes).
     if (byHash.name === name) return { item: byHash, cached: true };

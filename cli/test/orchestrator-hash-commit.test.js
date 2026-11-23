@@ -12,10 +12,12 @@ import { hashLocalPath } from '../src/hash.js';
 
 function fakeSupabase(existing) {
   const itemUpdates = [];
+  const lookups = [];
   const inserts = [];
   const supabase = {
     itemUpdates,
     inserts,
+    lookups,
     from(table) {
       if (table === 'items') {
         return {
@@ -26,7 +28,9 @@ function fakeSupabase(existing) {
           select() {
             return {
               eq(col) {
-                if (col === 'content_hash') return { maybeSingle: async () => ({ data: null, error: null }) };
+                if (col === 'content_hash') {
+                  return { maybeSingle: async () => { lookups.push(col); return { data: null, error: null }; } };
+                }
                 return { order() { return { limit: async () => ({ data: existing ? [existing] : [], error: null }) }; } };
               },
             };
@@ -149,4 +153,18 @@ test('given new skill when first scan succeeds then the real hash is committed',
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test('given non-disk target that failed its first scan when re-run then it is not treated as cached', async () => {
+  // -- Given --
+  const supabase = fakeSupabase(null);
+  const target = { target: 'remote-skill', type: 'skill', identifier: 'skills/remote', avail: 'remote' };
+  const spawnFn = async () => { throw new Error('sandbox exited 1'); };
+
+  // -- When --
+  const outcome = await dispatchTarget(supabase, target, { batchId: 'b1', force: false, spawnFn });
+
+  // -- Then --
+  assert.equal(outcome.error, 'sandbox exited 1');
+  assert.equal(supabase.lookups.length, 0, 'placeholder must never be used as a cache key');
 });
