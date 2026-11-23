@@ -165,3 +165,19 @@ def test_given_key_after_non_ascii_letter_when_redacted_then_letter_is_kept_and_
 
     ### When / Then
     assert redact.redact_secrets(text) == "\u00e9[REDACTED_KEY]"
+
+
+def test_given_non_breaking_space_after_password_label_when_redacted_then_quoted_value_is_masked() -> (
+    None
+):
+    """Scenario: Unicode whitespace after a label is matched the same way by the CLI and the sandbox.
+
+    Slice: stored-evidence masking (PR #212 review follow-up).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    text = 'password:\u00a0"correct horse"'
+
+    ### When / Then
+    assert redact.redact_secrets(text) == "password=[REDACTED]"

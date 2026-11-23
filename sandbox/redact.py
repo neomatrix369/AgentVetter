@@ -26,7 +26,7 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     (
         re.compile(
             r"api[_-]?key[\"']?\s*[:=]\s*(?:\"[^\"]*\"|\'[^\']*\'|[\"\'][^\n]*|[^\"\'&\s]+)",
-            re.IGNORECASE | re.ASCII,
+            re.IGNORECASE,
         ),
         "api_key=[REDACTED]",
     ),
@@ -40,7 +40,7 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     (
         re.compile(
             r"password[\"']?\s*[:=]\s*(?:\"[^\"]*\"|\'[^\']*\'|[\"\'][^\n]*|[^\"\'&\s]+)",
-            re.IGNORECASE | re.ASCII,
+            re.IGNORECASE,
         ),
         "password=[REDACTED]",
     ),

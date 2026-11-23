@@ -419,3 +419,21 @@ test('given a key after a non-ASCII letter when maskSecrets then the key is mask
   // -- When / Then --
   assert.equal(maskSecrets(text).text, '\u00e9[REDACTED_KEY]');
 });
+
+test('given a non-breaking space after a password label when maskSecrets then the quoted value is masked', () => {
+  /**
+   * Scenario: Unicode whitespace after a label is matched the same way by the CLI and the sandbox.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a password label followed by a non-breaking space and a quoted value,
+   * When maskSecrets runs,
+   * Then the output is exactly the placeholder.
+   */
+  // -- Given --
+  const text = 'password:\u00a0"correct horse"';
+
+  // -- When / Then --
+  assert.equal(maskSecrets(text).text, 'password=[REDACTED]');
+});
