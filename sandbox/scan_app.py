@@ -86,6 +86,7 @@ image = (
         "cisco-ai-mcp-scanner",
     )
     .add_local_python_source("scanners", copy=True)
+    .add_local_python_source("redact", copy=True)
 )
 
 TIMEOUT_SECONDS = (
