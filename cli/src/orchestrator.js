@@ -3,7 +3,7 @@ import { getSupabase } from './supabaseClient.js';
 import { hashLocalPath } from './hash.js';
 import { spawnScanSandbox } from './modalClient.js';
 import { runRoute } from './router.js';
-import { runJudgePanel } from './judgePanel.js';
+import { runBatchJudgement } from './judgePanel.js';
 import {
   buildCoverageLedger,
   formatCoverageLedger,
@@ -82,8 +82,10 @@ async function upsertItem(supabase, target) {
   // duplicate identifier rows when content_hash changes between scans.
   const existing = await findLatestByIdentifier(supabase, identifier);
   if (existing) {
-    const updated = await updateItemRow(supabase, existing.id, { content_hash: contentHash, name });
-    return { item: updated, cached: false };
+    // Keep the stored hash until a scan succeeds. The guard compares disk content to
+    // this hash, so writing it now would let edited content inherit the old verdict.
+    const updated = await updateItemRow(supabase, existing.id, { name });
+    return { item: updated, cached: false, pendingHash: contentHash };
   }
 
   const { data: inserted, error } = await supabase.from('items').insert({
@@ -95,9 +97,9 @@ async function upsertItem(supabase, target) {
   return { item: inserted, cached: false };
 }
 
-async function dispatchTarget(supabase, target, { batchId, force, spawnFn }) {
+export async function dispatchTarget(supabase, target, { batchId, force, spawnFn }) {
   try {
-    const { item, cached } = await upsertItem(supabase, target);
+    const { item, cached, pendingHash } = await upsertItem(supabase, target);
     if (cached && !force) {
       console.log(`[skip] ${target.target} — content unchanged since last scan`);
       return { target: target.target, scanRunId: null };
@@ -115,6 +117,8 @@ async function dispatchTarget(supabase, target, { batchId, force, spawnFn }) {
         scanRunId: run.id,
         packPath: target.packPath || null,
       });
+      // The scan finished cleanly, so the new content is now the one with a verdict.
+      if (pendingHash) await updateItemRow(supabase, item.id, { content_hash: pendingHash });
       return { target: target.target, scanRunId: run.id };
     } catch (err) {
       console.error(`[error] sandbox failed for ${target.target}: ${err.message}`);
@@ -238,7 +242,7 @@ function resolveScanDeps(opts = {}) {
     getSupabaseFn: opts.getSupabaseFn || getSupabase,
     spawnFn: opts.spawnFn || spawnScanSandbox,
     routeFn: opts.routeFn || runRoute,
-    judgeFn: opts.judgeFn || runJudgePanel,
+    judgeFn: opts.judgeFn || runBatchJudgement,
   };
 }
 

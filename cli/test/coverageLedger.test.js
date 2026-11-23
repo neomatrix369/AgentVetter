@@ -306,3 +306,8 @@ test('GWT-72.4: completed Cargo Audit names the tool; Snyk/DepShield gaps stay e
     },
   );
 });
+
+test('given scanner status needs_setup when mapped then it is skipped, not silently not_started', async () => {
+  const { mapScannerStatusToAction } = await import('../src/coverageLedger.js');
+  assert.equal(mapScannerStatusToAction('needs_setup'), 'skipped');
+});

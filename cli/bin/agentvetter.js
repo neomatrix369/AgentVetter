@@ -5,7 +5,7 @@ import { ensureSchema } from '../src/ensureSchema.js';
 import { loadEnv } from '../src/loadEnv.js';
 import { runScan } from '../src/orchestrator.js';
 import { runRoute } from '../src/router.js';
-import { runJudgePanel } from '../src/judgePanel.js';
+import { runBatchJudgement } from '../src/judgePanel.js';
 import {
   buildCoverageLedger,
   formatCoverageLedger,
@@ -169,7 +169,8 @@ program
   .requiredOption('--batch-id <id>', 'batch_id to judge')
   .action(async (opts) => {
     try {
-      await runJudgePanel(opts.batchId);
+      const { panel_runs: panelRuns } = await runBatchJudgement(opts.batchId);
+      console.log(JSON.stringify({ batch_id: opts.batchId, panel_runs: panelRuns.length }, null, 2));
     } catch (err) {
       console.error(err.message || err);
       process.exitCode = 1;
