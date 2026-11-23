@@ -66,7 +66,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Dashboard: `agentvetter-status.js` / `agentvetter-live.js`; rollup: `db/schema.sql`;
   Snyk preflight: `sandbox/scanners.py`. VERIFIED on Live Packages (pizauth / snare).
 
-### Added
 - Dashboard Workflow chrome polish (slice 76, Wave R) — IMPLEMENTED / VERIFIED
   (unit) on `main` ([#165](https://github.com/neomatrix369/AgentVetter/pull/165)).
   Denser Triage filter toolbars with Type/Quality/Target/Status group labels,
