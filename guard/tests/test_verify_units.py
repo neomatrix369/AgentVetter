@@ -35,13 +35,13 @@ def test_given_naive_datetime_when_iso_then_utc_z_suffix() -> None:
     assert actual == "2026-08-01T10:00:00Z"
 
 
-def test_given_none_scanned_at_when_stale_checked_then_false() -> None:
-    """Scenario: Missing scanned_at is not classified stale by the helper."""
+def test_given_none_scanned_at_when_stale_checked_then_true() -> None:
+    """Scenario: A verdict with no timestamp has unknown age, so it is stale (fail closed)."""
     ### Given / When
     actual = _is_stale(None, 14, datetime(2026, 8, 15, tzinfo=UTC))
 
     ### Then
-    assert actual is False
+    assert actual is True
 
 
 def test_given_naive_old_scan_when_stale_checked_then_true() -> None:
@@ -103,3 +103,29 @@ def test_given_score_inputs_when_format_quality_then_n_over_100_or_emdash(
 
     ### Then
     assert actual == expected
+
+
+def test_given_running_scan_without_prior_verdict_when_classified_then_blocked() -> None:
+    """Scenario: A running scan with no prior verdict is blocked, matching guard/status.py."""
+    ### Given
+    from guard.verify import StatusRecord, _running_blocks
+
+    status = StatusRecord(heatmap_status="grey", scanned_at=None, run_status="running")
+
+    ### When / Then
+    assert (
+        _running_blocks(
+            status, validity_days=14, now=datetime(2026, 8, 15, tzinfo=UTC), threshold="red"
+        )
+        is True
+    )
+
+
+def test_given_amber_verdict_and_amber_threshold_when_at_or_above_then_true() -> None:
+    """Scenario: At an amber threshold an amber verdict is blocked, as the guard blocks it."""
+    ### Given / When / Then
+    from guard.verify import _at_or_above
+
+    assert _at_or_above("amber", "amber") is True
+    assert _at_or_above("amber", "red") is False
+    assert _at_or_above("red", "red") is True

@@ -149,7 +149,8 @@ def _iso(value: datetime | None) -> str | None:
 
 def _is_stale(scanned_at: datetime | None, validity_days: int, now: datetime) -> bool:
     if scanned_at is None:
-        return False
+        # Unknown age: fail closed, the same as guard/status.py.
+        return True
     point = scanned_at if scanned_at.tzinfo else scanned_at.replace(tzinfo=UTC)
     return point < now - timedelta(days=validity_days)
 
@@ -181,6 +182,22 @@ def _row(
     )
 
 
+def _at_or_above(rag: str, threshold: str) -> bool:
+    """Same rule the guard applies: red always blocks, amber blocks at an amber threshold."""
+    return rag == "red" or (threshold == "amber" and rag == "amber")
+
+
+def _running_blocks(
+    status: StatusRecord, *, validity_days: int, now: datetime, threshold: str
+) -> bool:
+    """A running scan is blocked unless its prior verdict is fresh and passes the threshold."""
+    heatmap = (status.heatmap_status or "").lower()
+    has_prior = heatmap in ("green", "amber", "red")
+    if not has_prior or _is_stale(status.scanned_at, validity_days, now):
+        return True
+    return _at_or_above(heatmap, threshold)
+
+
 def _classify(
     name: str,
     resolved: ResolvedArtifact | None,
@@ -188,6 +205,7 @@ def _classify(
     *,
     validity_days: int,
     now: datetime,
+    threshold: str = "red",
 ) -> ArtifactRow:
     if resolved is None:
         return _row(
@@ -214,7 +232,9 @@ def _classify(
             rag=None,
             scanned_at=_iso(status.scanned_at),
             stale=False,
-            will_be_blocked=False,
+            will_be_blocked=_running_blocks(
+                status, validity_days=validity_days, now=now, threshold=threshold
+            ),
             quality_score=score,
             note="Scan in progress — check back shortly",
         )
@@ -267,7 +287,11 @@ def _classify(
         )
 
     rag = heatmap if heatmap in ("green", "amber") else None
-    note = "—" if heatmap == "green" else "Reported but not blocked at current threshold"
+    blocked = _at_or_above(heatmap, threshold)
+    if blocked:
+        note = f"rated {heatmap} — at/above threshold"
+    else:
+        note = "—" if heatmap == "green" else "Reported but not blocked at current threshold"
     return _row(
         name=resolved.name,
         resolved_path=resolved.resolved_path,
@@ -276,7 +300,7 @@ def _classify(
         rag=rag,
         scanned_at=_iso(status.scanned_at),
         stale=False,
-        will_be_blocked=False,
+        will_be_blocked=blocked,
         quality_score=score,
         note=note,
     )
@@ -288,9 +312,13 @@ def verify_artifacts(
     resolve: ResolveFn,
     fetch_status: FetchStatusFn,
     validity_days: int = 14,
+    threshold: str = "red",
     now: NowFn | None = None,
 ) -> VerifyResult:
-    """Verify every name in one pass; never stop at the first issue."""
+    """Verify every name in one pass; never stop at the first issue.
+
+    Pass the guard's configured ``threshold`` so the blocked column matches enforcement.
+    """
     clock = now or (lambda: datetime.now(UTC))
     current = clock()
     rows: list[ArtifactRow] = []
@@ -304,6 +332,7 @@ def verify_artifacts(
                 status,
                 validity_days=validity_days,
                 now=current,
+                threshold=threshold,
             )
         )
     return VerifyResult(artifacts=rows)

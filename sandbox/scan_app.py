@@ -29,7 +29,7 @@ _SANDBOX_DIR = Path(__file__).resolve().parent
 if str(_SANDBOX_DIR) not in sys.path:
     sys.path.insert(0, str(_SANDBOX_DIR))
 
-from scanners import TESSL_SOURCES, run_all_scanners  # noqa: E402
+from scanners import TESSL_SOURCES, run_all_scanners, scanner_subprocess_env  # noqa: E402
 
 app = modal.App("agentvetter-scan")
 
@@ -532,6 +532,7 @@ def _clone_repo(url: str, workdir: str):
         capture_output=True,
         text=True,
         timeout=_CLONE_TIMEOUT,
+        env=scanner_subprocess_env(),
     )
     if result.returncode != 0:
         raise RuntimeError(f"git clone failed (exit {result.returncode}): {result.stderr[:500]}")

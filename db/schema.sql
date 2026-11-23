@@ -221,6 +221,14 @@ grant select on table items, scan_runs, scan_run_scanners, findings,
   judge_panel_runs, judge_panel_judgements to anon, authenticated;
 grant select on dashboard_latest_runs to anon, authenticated;
 
+-- Tables the dashboard never reads. Supabase default privileges grant anon full DML on
+-- new public tables, so lock them down: RLS on with no anon policy, and no anon or
+-- authenticated grants. The CLI and sandbox use the service role, which bypasses RLS.
+alter table scan_batches enable row level security;
+alter table coverage     enable row level security;
+alter table config       enable row level security;
+revoke all on scan_batches, coverage, config from anon, authenticated;
+
 -- Rollup function: recompute an item's heatmap_status/risk_score from its latest scan_run.
 -- heatmap_status = worst-of actionable findings (any red → red; else any amber → amber;
 -- else green when ≥1 engine completed). risk_score stays weighted density for sort/trend.

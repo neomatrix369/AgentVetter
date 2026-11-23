@@ -37,11 +37,31 @@ def _which(binary):
     return shutil.which(binary) is not None
 
 
+_SECRET_ENV_PREFIXES = ("SUPABASE_", "MODAL_")
+
+
+def scanner_subprocess_env() -> dict[str, str]:
+    """Environment for every scanner or sandbox subprocess.
+
+    Scanner CLIs and stdio MCP servers run code from the repo being scanned, so
+    the Supabase service-role key and Modal tokens are removed. Scanner-specific
+    tokens (SNYK_TOKEN, TESSL_TOKEN, LLM keys) are kept because scanners need them.
+    """
+    return {k: v for k, v in os.environ.items() if not k.startswith(_SECRET_ENV_PREFIXES)}
+
+
 def _run(cmd, timeout=SCAN_TIMEOUT, cwd=None):
     """Never raises on nonzero exit or timeout — callers map that to a
     scan_run_scanners status (unreachable) rather than a crash."""
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd)
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            cwd=cwd,
+            env=scanner_subprocess_env(),
+        )
         return proc.returncode, proc.stdout, proc.stderr
     except subprocess.TimeoutExpired as exc:
         return None, exc.stdout or "", f"timeout after {timeout}s"
@@ -2113,6 +2133,7 @@ class _MCPStdioClient:
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
+            env=scanner_subprocess_env(),
             text=True,
             # Locale-independent: under a forced ASCII locale the emoji-laden
             # report bytes would raise UnicodeDecodeError in the reader thread
