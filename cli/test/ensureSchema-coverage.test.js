@@ -228,6 +228,32 @@ test('given fake Client when applySchema then connects and queries', async () =>
   assert.deepEqual(calls, { connect: 1, query: 1, end: 1 });
 });
 
+test('given PGCONNECT_TIMEOUT_MS of zero when applySchema then falls back to 20 s timeout', async () => {
+  // -- Given --
+  const prev = process.env.PGCONNECT_TIMEOUT_MS;
+  process.env.PGCONNECT_TIMEOUT_MS = '0';
+  let seenTimeout;
+  class CapturingClient {
+    constructor(opts) {
+      seenTimeout = opts.connectionTimeoutMillis;
+    }
+    async connect() {}
+    async query() {}
+    async end() {}
+  }
+
+  try {
+    // -- When --
+    await applySchema({ dbUrl: 'postgresql://u:p@127.0.0.1:5432/db', ClientImpl: CapturingClient });
+  } finally {
+    if (prev === undefined) delete process.env.PGCONNECT_TIMEOUT_MS;
+    else process.env.PGCONNECT_TIMEOUT_MS = prev;
+  }
+
+  // -- Then --
+  assert.equal(seenTimeout, 20000);
+});
+
 test('given Client connect ENOTFOUND when applySchema then hint in error', async () => {
   // -- Given --
   class FailingClient {

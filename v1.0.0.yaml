@@ -178,6 +178,8 @@ bootstrap-v1:
           else
             log "Modal setup OK"
           fi
+          # Secrets dotenv is only needed for setup-modal.sh; do not leave it on disk.
+          rm -f "${ENV_FILE}"
         else
           log "Modal tokens absent; skipping Modal setup"
         fi

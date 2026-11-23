@@ -146,7 +146,8 @@ function requireDbUrl(dbUrl) {
  */
 function connectTimeoutFrom(raw) {
   const parsed = Number(raw || 20000);
-  return Number.isFinite(parsed) ? parsed : 20000;
+  // 0 or negative would disable the pg timeout entirely, reintroducing the hang.
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 20000;
 }
 
 export async function applySchema({

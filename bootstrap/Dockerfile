@@ -28,4 +28,7 @@ RUN test -s /app/db/schema.sql \
   && chmod +x /app/scripts/setup-modal.sh \
   && chmod +x /app/scripts/_modal_env_split.py
 
+# Run as the unprivileged node user; only the install step above needs root.
+USER node
+
 CMD ["sleep", "infinity"]
