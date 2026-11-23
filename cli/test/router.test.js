@@ -740,4 +740,3 @@ test('given model reasoning quotes a secret when routing persists then the store
   assert.ok(stored.includes('[REDACTED_KEY]'));
   assert.ok(JSON.parse(stored).reasoning, 'envelope still carries its reasoning');
 });
-
