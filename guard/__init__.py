@@ -5,7 +5,7 @@ the optional ``guard`` dependency group installed.
 """
 
 from guard.entry import decide, extract_target, main, resolve_artifact, resolve_operator_name
-from guard.guard_hook import check_call, check_call_by_identifier
+from guard.guard_hook import check_call_by_identifier
 from guard.status import (
     DEFAULT_VALIDITY_DAYS,
     get_item_status,
@@ -15,7 +15,6 @@ from guard.status import (
 
 __all__ = [
     "DEFAULT_VALIDITY_DAYS",
-    "check_call",
     "check_call_by_identifier",
     "decide",
     "extract_target",

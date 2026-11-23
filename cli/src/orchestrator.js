@@ -103,6 +103,21 @@ async function upsertItem(supabase, target) {
   return { item: inserted, cached: false, pendingHash: contentHash };
 }
 
+// A scan that is still "running" after this long was abandoned (crashed sandbox, killed CLI).
+export const STUCK_RUN_MS = 12 * 60 * 60 * 1000;
+
+/** Mark abandoned 'running' scan_runs for an item as failed so they stop looking in progress. */
+export async function failStuckRuns(supabase, itemId, now = Date.now()) {
+  const cutoff = new Date(now - STUCK_RUN_MS).toISOString();
+  const { error } = await supabase
+    .from('scan_runs')
+    .update({ status: 'failed', completed_at: new Date(now).toISOString() })
+    .eq('item_id', itemId)
+    .eq('status', 'running')
+    .lt('started_at', cutoff);
+  if (error) throw error;
+}
+
 export async function dispatchTarget(supabase, target, { batchId, force, spawnFn }) {
   try {
     const { item, cached, pendingHash } = await upsertItem(supabase, target);
@@ -110,6 +125,7 @@ export async function dispatchTarget(supabase, target, { batchId, force, spawnFn
       console.log(`[skip] ${target.target} — content unchanged since last scan`);
       return { target: target.target, scanRunId: null };
     }
+    await failStuckRuns(supabase, item.id);
     const { data: run, error: runError } = await supabase.from('scan_runs').insert({
       item_id: item.id, batch_id: batchId, status: 'running'
     }).select().single();

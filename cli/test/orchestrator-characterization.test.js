@@ -116,20 +116,17 @@ function createSupabaseStub({ byHashItem = null, itemId = 'item-1', runId = 'run
         },
         update() {
           if (table === 'items') calls.updateItems += 1;
-          return {
-            eq() {
-              return {
-                select() {
-                  return {
-                    single: () => makeThenable({
-                      data: byHashItem || { id: itemId },
-                      error: null,
-                    }),
-                  };
-                },
-              };
-            },
+          // Chainable: .eq() may repeat (failStuckRuns), and .select().single() is the item path.
+          const done = { error: null };
+          const chain = {
+            eq: () => chain,
+            lt: () => chain,
+            select: () => ({
+              single: () => makeThenable({ data: byHashItem || { id: itemId }, error: null }),
+            }),
+            then: (resolve) => resolve(done),
           };
+          return chain;
         },
       };
     },
