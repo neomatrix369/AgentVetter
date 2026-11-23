@@ -48,4 +48,6 @@ def test_given_scanner_writes_when_compared_to_schema_then_every_status_is_allow
 
     ### Then
     assert written, "expected scanners.py to write at least one status literal"
-    assert written - allowed == set(), f"statuses missing from schema constraint: {written - allowed}"
+    assert written - allowed == set(), (
+        f"statuses missing from schema constraint: {written - allowed}"
+    )

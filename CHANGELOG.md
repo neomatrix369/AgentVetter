@@ -7,16 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- Re-judging a finding replaces its earlier judge panel run instead of adding a second
-  verdict. Previously reruns inflated the judge tables.
-- Removed the legacy `check_call` and `pre_tool_use_hook` from the guard. Nothing on the
-  live path used them, and they skipped the staleness and tamper checks.
-- Bootstrap image is pinned by digest and `modal` to 1.5.1, so rebuilds do not drift.
-
-### Fixed
-- Removed README links to four user-guide pages that did not exist.
-
 ### Added
 - Monk Kit PoC (slice 58, ADR-0001): `MANIFEST`, `common.yaml`, `latest.yaml`,
   `v1.0.0.yaml` and a `bootstrap/` image that provisions managed Supabase,
@@ -36,7 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Screenshot gallery regenerated 2026-09-21 (post-rebase onto `main`): Mock
   Dashboard + new Workflow Run/Triage/Verify shots, quality floors, R/Q badges;
   live CLI scan refresh; capture script covers `05-workflow/`
+
 ### Fixed
+- Removed README links to four user-guide pages that did not exist.
 - Schema cleanup: `db/schema.sql` now drops `tripwire_rollup_item(uuid)` via
   `DROP FUNCTION IF EXISTS` so `agentvetter setup --force` idempotently removes
   the legacy function on any older deployment. Dropped from live Supabase DB
@@ -245,6 +237,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--force`, `--concurrency`, and explicit path arguments
 
 ### Changed
+- Re-judging a finding replaces its earlier judge panel run instead of adding a second
+  verdict. Previously reruns inflated the judge tables.
+- Removed the legacy `check_call` and `pre_tool_use_hook` from the guard. Nothing on the
+  live path used them, and they skipped the staleness and tamper checks.
+- Bootstrap image is pinned by digest and `modal` to 1.5.1, so rebuilds do not drift.
 - Hard-cut residual legacy product names from live code/docs (ADR-0018 amend
   2026-10-03): single CLI bin `agentvetter`; config home `~/.agentvetter` only;
   `AGENTVETTER_*` env only; schema ships `agentvetter_rollup_item` only;
