@@ -1,0 +1,468 @@
+namespace: agentvetter
+
+# Immutable v1.0.0 definitions. Prefer inheriting these from latest.yaml rather
+# than editing this file in place after publication.
+
+supabase-v1:
+  defines: supabase/project
+  name: agentvetter
+  organization_id: <- secret("supabase-organization-id")
+  region_selection:
+    type: specific
+    code: us-east-1
+  secret_ref: supabase-api-token
+  db_pass_secret_ref: supabase-db-password
+  anon_api_key_secret_ref: supabase-anon-key
+  service_role_api_key_secret_ref: supabase-service-key
+  permitted-secrets:
+    supabase-api-token: true
+    supabase-organization-id: true
+    supabase-db-password: true
+    supabase-anon-key: true
+    supabase-service-key: true
+  services:
+    data:
+      protocol: custom
+
+# Cluster bootstrap: apply baked schema via Management API,
+# then run Modal setup from scripts baked into agentvetter-bootstrap:latest.
+# No blob mounts — paths/blobs hang containers before bash starts (RestartCount=0).
+bootstrap-v1:
+  defines: runnable
+  containers:
+    bootstrap:
+      # Built from bootstrap/Dockerfile (scripts + sandbox + modal CLI).
+      image: agentvetter-bootstrap:latest
+      workdir: /app
+      # NOTE: Monk executes `bash:` under /bin/sh (dash) — PRO-852. Keep POSIX only
+      # (no `pipefail`, no `[[ ]]`) or the script dies on line 1.
+      bash: |
+        set -eu
+        READY_MARKER=/tmp/agentvetter-bootstrap-ready
+        export SCHEMA_FILE=/app/db/schema.sql
+        export APP_ROOT=/app
+        export ENV_FILE=/tmp/agentvetter-bootstrap.env
+        rm -f "${READY_MARKER}"
+
+        log() { echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] $*"; }
+
+        log "bootstrap-v1 start (POSIX /bin/sh; scripts baked in image)"
+
+        log "validating required env"
+        if [ -z "${SUPABASE_PROJECT_ID:-}" ] || [ -z "${SUPABASE_URL:-}" ] \
+          || [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ] || [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+          echo "error: SUPABASE_PROJECT_ID / SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / SUPABASE_ACCESS_TOKEN not injected" >&2
+          exit 1
+        fi
+        log "env OK project_id=${SUPABASE_PROJECT_ID} url=${SUPABASE_URL}"
+
+        # Schema is baked into the image at build time (bootstrap/Dockerfile),
+        # pinned to the commit the image was built from — no runtime fetch.
+        log "using baked schema ${SCHEMA_FILE}"
+        if [ ! -s "${SCHEMA_FILE}" ]; then
+          echo "error: baked schema ${SCHEMA_FILE} missing or empty" >&2
+          exit 1
+        fi
+
+        log "applying schema via Supabase Management API"
+        node <<'NODE'
+        const fs = require("fs");
+        const projectId = process.env.SUPABASE_PROJECT_ID;
+        const token = process.env.SUPABASE_ACCESS_TOKEN;
+        const query = fs.readFileSync(process.env.SCHEMA_FILE || "/app/db/schema.sql", "utf8");
+        const url = `https://api.supabase.com/v1/projects/${projectId}/database/query`;
+        fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query }),
+        }).then(async (res) => {
+          const body = await res.text();
+          if (!res.ok) {
+            console.error(
+              `Management API schema apply failed: HTTP ${res.status} ${body.slice(0, 400)}`
+            );
+            process.exit(1);
+          }
+          console.log("Management API schema apply OK");
+        }).catch((err) => {
+          console.error(`Management API schema apply error: ${err.message}`);
+          process.exit(1);
+        });
+        NODE
+
+        log "PostgREST readiness probe (items)"
+        node <<'NODE'
+        const url = `${process.env.SUPABASE_URL}/rest/v1/items?select=id&limit=1`;
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+        fetch(url, {
+          headers: {
+            apikey: key,
+            Authorization: `Bearer ${key}`,
+          },
+        }).then(async (res) => {
+          const body = await res.text();
+          if (!res.ok) {
+            console.error(`PostgREST probe failed: HTTP ${res.status} ${body.slice(0, 200)}`);
+            if (body.includes("PGRST205")) {
+              console.error("Schema still missing (PGRST205)");
+            }
+            process.exit(1);
+          }
+          console.log("PostgREST items probe OK");
+        }).catch((err) => {
+          console.error(`PostgREST probe error: ${err.message}`);
+          process.exit(1);
+        });
+        NODE
+
+        touch "${READY_MARKER}"
+        log "schema ready (${READY_MARKER})"
+
+        # Modal: write dotenv from injected secrets, then run baked setup-modal.sh.
+        # Heredoc body/terminator stay at bash base indent (YAML | strip → col 0).
+        if [ -n "${MODAL_TOKEN_ID:-}" ] && [ -n "${MODAL_TOKEN_SECRET:-}" ]; then
+          log "writing Modal/scanner dotenv for setup-modal.sh"
+        node <<'NODE'
+        const fs = require("fs");
+        const keys = [
+          "SUPABASE_URL",
+          "SUPABASE_SERVICE_ROLE_KEY",
+          "MODAL_TOKEN_ID",
+          "MODAL_TOKEN_SECRET",
+          "SNYK_TOKEN",
+          "TESSL_TOKEN",
+          "TESSL_WORKSPACE",
+          "SKILL_SCANNER_LLM_API_KEY",
+          "SKILL_SCANNER_LLM_MODEL",
+          "SKILL_SCANNER_LLM_PROVIDER",
+          "SKILL_SCANNER_LLM_BASE_URL",
+          "SKILL_SCANNER_LLM_API_VERSION",
+          "MCP_SCANNER_LLM_API_KEY",
+          "MCP_SCANNER_LLM_MODEL",
+          "MCP_SCANNER_LLM_BASE_URL",
+          "MCP_SCANNER_LLM_API_VERSION",
+          "AI_DEFENSE_API_KEY",
+          "AI_DEFENSE_API_URL",
+          "MCP_SCANNER_API_KEY",
+          "MCP_SCANNER_ENDPOINT",
+          "SIE_ENDPOINT",
+          "SIE_API_KEY",
+          "SIE_MODEL",
+          "DASHSCOPE_API_KEY",
+          "ALIBABA_OPENAI_BASE_URL",
+          "MODEL_STUDIO_MODEL",
+          "OSSPREY_API_KEY",
+        ];
+        const lines = [];
+        for (const key of keys) {
+          const value = process.env[key];
+          if (value != null && String(value).length > 0) {
+            const escaped = String(value)
+              .replace(/\\/g, "\\\\")
+              .replace(/"/g, '\\"')
+              .replace(/\n/g, "\\n");
+            lines.push(`${key}="${escaped}"`);
+          }
+        }
+        const out = process.env.ENV_FILE || "/tmp/agentvetter-bootstrap.env";
+        fs.writeFileSync(out, lines.join("\n") + "\n", { mode: 0o600 });
+        console.log(`dotenv written ${out} (${lines.length} keys)`);
+        NODE
+
+          log "running baked Modal setup (${APP_ROOT}/scripts/setup-modal.sh)"
+          if ! "${APP_ROOT}/scripts/setup-modal.sh" --non-interactive --env-file "${ENV_FILE}"; then
+            log "WARNING: Modal setup failed (schema already applied; continuing)"
+          else
+            log "Modal setup OK"
+          fi
+        else
+          log "Modal tokens absent; skipping Modal setup"
+        fi
+
+        log "bootstrap complete; sleeping"
+        exec sleep infinity
+  connections:
+    supabase:
+      runnable: agentvetter/supabase-v1
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - agentvetter/supabase-v1
+      timeout: 900
+  # No readiness checks: Monk `exec`-based checks never flipped ready here
+  # (empty stdout / exhausted attempts → state failed) even after schema OK.
+  # Container only reaches `sleep infinity` after Management API schema + probe.
+  permitted-secrets:
+    supabase-api-token: true
+    supabase-db-password: true
+    supabase-service-key: true
+    supabase-anon-key: true
+    modal-token-id: true
+    modal-token-secret: true
+    snyk-token: true
+    tessl-token: true
+    tessl-workspace: true
+    skill-scanner-llm-api-key: true
+    skill-scanner-llm-model: true
+    skill-scanner-llm-provider: true
+    skill-scanner-llm-base-url: true
+    skill-scanner-llm-api-version: true
+    mcp-scanner-llm-api-key: true
+    mcp-scanner-llm-model: true
+    mcp-scanner-llm-base-url: true
+    mcp-scanner-llm-api-version: true
+    ai-defense-api-key: true
+    ai-defense-api-url: true
+    mcp-scanner-api-key: true
+    mcp-scanner-endpoint: true
+    sie-endpoint: true
+    sie-api-key: true
+    sie-model: true
+    dashscope-api-key: true
+    alibaba-openai-base-url: true
+    model-studio-model: true
+    ossprey-api-key: true
+  variables:
+    supabase-project-id:
+      type: string
+      env: SUPABASE_PROJECT_ID
+      description: Supabase project ref (entity state id).
+      value: <- connection-target("supabase") entity-state get-member("id")
+    supabase-url:
+      type: string
+      env: SUPABASE_URL
+      description: Supabase HTTP API URL.
+      value: >-
+        <- "https://" connection-target("supabase") entity-state
+        get-member("id") ".supabase.co" concat-all
+    supabase-access-token:
+      type: string
+      env: SUPABASE_ACCESS_TOKEN
+      description: User-provided Supabase Management API token.
+      value: <- secret("supabase-api-token")
+    supabase-db-password:
+      type: string
+      env: SUPABASE_DB_PASSWORD
+      description: Entity-generated DB password (used to build SUPABASE_DB_URL).
+      value: <- secret("supabase-db-password")
+    supabase-service-role-key:
+      type: string
+      env: SUPABASE_SERVICE_ROLE_KEY
+      description: Entity-generated service role key.
+      value: <- secret("supabase-service-key")
+    supabase-anon-key:
+      type: string
+      env: SUPABASE_ANON_KEY
+      description: Entity-generated anon key.
+      value: <- secret("supabase-anon-key")
+    modal-token-id:
+      type: string
+      env: MODAL_TOKEN_ID
+      value: <- secret("modal-token-id")
+    modal-token-secret:
+      type: string
+      env: MODAL_TOKEN_SECRET
+      value: <- secret("modal-token-secret")
+    snyk-token:
+      type: string
+      env: SNYK_TOKEN
+      value: <- secret("snyk-token")
+    tessl-token:
+      type: string
+      env: TESSL_TOKEN
+      value: <- secret("tessl-token")
+    tessl-workspace:
+      type: string
+      env: TESSL_WORKSPACE
+      value: <- secret("tessl-workspace")
+    skill-scanner-llm-api-key:
+      type: string
+      env: SKILL_SCANNER_LLM_API_KEY
+      value: <- secret("skill-scanner-llm-api-key")
+    skill-scanner-llm-model:
+      type: string
+      env: SKILL_SCANNER_LLM_MODEL
+      value: <- secret("skill-scanner-llm-model")
+    skill-scanner-llm-provider:
+      type: string
+      env: SKILL_SCANNER_LLM_PROVIDER
+      value: <- secret("skill-scanner-llm-provider")
+    skill-scanner-llm-base-url:
+      type: string
+      env: SKILL_SCANNER_LLM_BASE_URL
+      value: <- secret("skill-scanner-llm-base-url")
+    skill-scanner-llm-api-version:
+      type: string
+      env: SKILL_SCANNER_LLM_API_VERSION
+      value: <- secret("skill-scanner-llm-api-version")
+    mcp-scanner-llm-api-key:
+      type: string
+      env: MCP_SCANNER_LLM_API_KEY
+      value: <- secret("mcp-scanner-llm-api-key")
+    mcp-scanner-llm-model:
+      type: string
+      env: MCP_SCANNER_LLM_MODEL
+      value: <- secret("mcp-scanner-llm-model")
+    mcp-scanner-llm-base-url:
+      type: string
+      env: MCP_SCANNER_LLM_BASE_URL
+      value: <- secret("mcp-scanner-llm-base-url")
+    mcp-scanner-llm-api-version:
+      type: string
+      env: MCP_SCANNER_LLM_API_VERSION
+      value: <- secret("mcp-scanner-llm-api-version")
+    ai-defense-api-key:
+      type: string
+      env: AI_DEFENSE_API_KEY
+      value: <- secret("ai-defense-api-key")
+    ai-defense-api-url:
+      type: string
+      env: AI_DEFENSE_API_URL
+      value: <- secret("ai-defense-api-url")
+    mcp-scanner-api-key:
+      type: string
+      env: MCP_SCANNER_API_KEY
+      value: <- secret("mcp-scanner-api-key")
+    mcp-scanner-endpoint:
+      type: string
+      env: MCP_SCANNER_ENDPOINT
+      value: <- secret("mcp-scanner-endpoint")
+    sie-endpoint:
+      type: string
+      env: SIE_ENDPOINT
+      value: <- secret("sie-endpoint")
+    sie-api-key:
+      type: string
+      env: SIE_API_KEY
+      value: <- secret("sie-api-key")
+    sie-model:
+      type: string
+      env: SIE_MODEL
+      value: <- secret("sie-model")
+    dashscope-api-key:
+      type: string
+      env: DASHSCOPE_API_KEY
+      value: <- secret("dashscope-api-key")
+    alibaba-openai-base-url:
+      type: string
+      env: ALIBABA_OPENAI_BASE_URL
+      value: <- secret("alibaba-openai-base-url")
+    model-studio-model:
+      type: string
+      env: MODEL_STUDIO_MODEL
+      value: <- secret("model-studio-model")
+    ossprey-api-key:
+      type: string
+      env: OSSPREY_API_KEY
+      value: <- secret("ossprey-api-key")
+
+dashboard-v1:
+  defines: runnable
+  containers:
+    nginx:
+      image: docker.io/library/nginx:1.27-alpine
+      # Mount blob outside the docroot — blob mounts are often not writable and
+      # may lack traverse permissions for the nginx worker. Copy into a local
+      # html tree, fix modes, inject Live config, then start nginx.
+      paths:
+        - blobs://dashboard:/opt/agentvetter-dashboard
+      bash: |
+        set -e
+        DOCROOT=/usr/share/nginx/html
+        SRC=/opt/agentvetter-dashboard
+        rm -rf "${DOCROOT:?}/"*
+        cp -a "${SRC}/." "${DOCROOT}/"
+        chmod -R a+rX "${DOCROOT}"
+        # Live config rendered by Monk into /tmp (writable), then copied in.
+        cp /tmp/agentvetter-dashboard.config.js "${DOCROOT}/agentvetter-dashboard.config.js"
+        chmod a+r "${DOCROOT}/agentvetter-dashboard.config.js"
+        if [ -f "${DOCROOT}/AgentVetter.dc.html" ] && [ ! -f "${DOCROOT}/index.html" ]; then
+          ln -sf AgentVetter.dc.html "${DOCROOT}/index.html"
+        fi
+        exec nginx -g 'daemon off;'
+  files:
+    nginx-default:
+      container: nginx
+      path: /etc/nginx/conf.d/default.conf
+      mode: 420
+      contents: |
+        server {
+          listen 80;
+          server_name _;
+          root /usr/share/nginx/html;
+          index AgentVetter.dc.html index.html;
+
+          location / {
+            try_files $uri $uri/ /AgentVetter.dc.html;
+          }
+
+          location = /healthz {
+            default_type text/plain;
+            return 200 'ok';
+          }
+        }
+    dashboard-config:
+      container: nginx
+      path: /tmp/agentvetter-dashboard.config.js
+      mode: 420
+      contents: |
+        // Generated by Monk at deploy time — Live Supabase config.
+        window.__AGENTVETTER_CONFIG = {
+          SUPABASE_URL: "{{ v "supabase-url" }}",
+          SUPABASE_ANON_KEY: "{{ s "supabase-anon-key" }}",
+        };
+  services:
+    http:
+      container: nginx
+      port: 80
+      protocol: tcp
+      ingress-routes:
+        web:
+          path-prefix: /
+  connections:
+    supabase:
+      runnable: agentvetter/supabase-v1
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - agentvetter/supabase-v1
+      timeout: 900
+  permitted-secrets:
+    supabase-anon-key: true
+  variables:
+    supabase-url:
+      type: string
+      env: SUPABASE_URL
+      description: Browser-facing Supabase HTTP API URL for Live mode.
+      value: >-
+        <- "https://" connection-target("supabase") entity-state
+        get-member("id") ".supabase.co" concat-all
+    supabase-anon-key:
+      type: string
+      env: SUPABASE_ANON_KEY
+      description: Browser anon key for Live mode (entity-generated).
+      value: <- secret("supabase-anon-key")
+
+prod-v1:
+  defines: group
+  metadata:
+    name: AgentVetter
+    description: >-
+      Discover and scan AI skills and MCP servers, then review findings in one
+      Live dashboard. Provisions managed Supabase, bootstraps schema and Modal
+      in-cluster, and serves the AgentVetter UI on your Monk cluster.
+    tags: security,ai,mcp,skills,dashboard,supabase,modal,scanning,bootstrap
+    website: https://github.com/neomatrix369/AgentVetter
+    source: https://github.com/neomatrix369/AgentVetter
+    license: MIT
+    publisher: agentvetter
+    icon: https://raw.githubusercontent.com/neomatrix369/AgentVetter/main/AgentVetter-Banner.png
+  members:
+    - agentvetter/supabase-v1
+    - agentvetter/bootstrap-v1
+    - agentvetter/dashboard-v1

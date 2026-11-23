@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import path from 'node:path';
 
 /** Config home dir name under $HOME (ADR-0018). */
@@ -12,7 +11,7 @@ const HOOK_SUFFIXES = [
  * Resolve AgentVetter config home under `homedir`.
  * Always `~/.agentvetter` (no legacy fallback).
  */
-export function resolveConfigHome(homedir, { fs: fsImpl = fs } = {}) {
+export function resolveConfigHome(homedir) {
   return path.join(homedir, CONFIG_HOME_NAME);
 }
 

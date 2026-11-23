@@ -59,7 +59,7 @@ function readHookRegistration({ fs, settingsPath, homedir }) {
 
 /** Local hooks state from config home: installed | disabled/enabled | corrupt. */
 function readLocalHooks({ fs, homedir }) {
-  const configHome = resolveConfigHome(homedir, { fs });
+  const configHome = resolveConfigHome(homedir);
   const configPath = path.join(configHome, 'config.json');
   const settingsPath = path.join(homedir, '.claude', 'settings.json');
   const base = {

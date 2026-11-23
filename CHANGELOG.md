@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Monk Kit PoC (slice 58, ADR-0001): `MANIFEST`, `common.yaml`, `latest.yaml`,
+  `v1.0.0.yaml` and a `bootstrap/` image that provisions managed Supabase,
+  applies the schema baked in at image build time, deploys Modal from injected
+  secrets and serves the dashboard via ingress. Tier 1–3 secrets declared.
+  **Proposed** — not VERIFIED; the workstation Live path stays the supported one.
+- `applySchema` gets a Postgres connect timeout (`PGCONNECT_TIMEOUT_MS`,
+  default 20 s) so an unreachable IPv6-only Supabase host fails instead of hanging.
+
 ### Docs
 - Migration guide: Modal secrets + `agentvetter-scan` deploy, Supabase
   `agentvetter_rollup_item`, and Pages demo path cutover recorded as **VERIFIED**
@@ -57,7 +66,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Dashboard: `agentvetter-status.js` / `agentvetter-live.js`; rollup: `db/schema.sql`;
   Snyk preflight: `sandbox/scanners.py`. VERIFIED on Live Packages (pizauth / snare).
 
-### Added
 - Dashboard Workflow chrome polish (slice 76, Wave R) — IMPLEMENTED / VERIFIED
   (unit) on `main` ([#165](https://github.com/neomatrix369/AgentVetter/pull/165)).
   Denser Triage filter toolbars with Type/Quality/Target/Status group labels,
