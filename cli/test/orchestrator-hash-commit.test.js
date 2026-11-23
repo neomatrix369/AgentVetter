@@ -12,16 +12,22 @@ import { hashLocalPath } from '../src/hash.js';
 
 function fakeSupabase(existing) {
   const itemUpdates = [];
+  const inserts = [];
   const supabase = {
     itemUpdates,
+    inserts,
     from(table) {
       if (table === 'items') {
         return {
+          insert(payload) {
+            inserts.push(payload);
+            return { select() { return { single: async () => ({ data: { id: 'item-new', ...payload }, error: null }) }; } };
+          },
           select() {
             return {
               eq(col) {
                 if (col === 'content_hash') return { maybeSingle: async () => ({ data: null, error: null }) };
-                return { order() { return { limit: async () => ({ data: [existing], error: null }) }; } };
+                return { order() { return { limit: async () => ({ data: existing ? [existing] : [], error: null }) }; } };
               },
             };
           },
@@ -101,6 +107,45 @@ test('given edited skill when scan fails then old hash is kept so the guard fail
 
     // -- Then --
     assert.equal(hashWrites(supabase.itemUpdates).length, 0, 'failed scan must not commit the new hash');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('given new skill when first scan fails then a placeholder hash is stored so the next run rescans', async () => {
+  // -- Given --
+  const dir = await editedSkillDir();
+  const supabase = fakeSupabase(null);
+  const target = { target: dir, type: 'skill', identifier: 'skills/new', avail: 'source_on_disk' };
+  const spawnFn = async () => { throw new Error('sandbox exited 1'); };
+
+  try {
+    // -- When --
+    await dispatchTarget(supabase, target, { batchId: 'b1', force: false, spawnFn });
+
+    // -- Then --
+    assert.equal(supabase.inserts.length, 1);
+    assert.match(supabase.inserts[0].content_hash, /^pending:/, 'real hash must not be stored before a scan');
+    assert.equal(hashWrites(supabase.itemUpdates).length, 0);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('given new skill when first scan succeeds then the real hash is committed', async () => {
+  // -- Given --
+  const dir = await editedSkillDir();
+  const supabase = fakeSupabase(null);
+  const target = { target: dir, type: 'skill', identifier: 'skills/new', avail: 'source_on_disk' };
+
+  try {
+    // -- When --
+    await dispatchTarget(supabase, target, { batchId: 'b1', force: false, spawnFn: async () => {} });
+
+    // -- Then --
+    const written = hashWrites(supabase.itemUpdates);
+    assert.equal(written.length, 1);
+    assert.equal(written[0].content_hash, await hashLocalPath(dir));
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

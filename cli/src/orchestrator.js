@@ -88,13 +88,15 @@ async function upsertItem(supabase, target) {
     return { item: updated, cached: false, pendingHash: contentHash };
   }
 
+  // Insert a placeholder hash: the real hash is committed only after a successful scan,
+  // so a failed first scan is retried on the next run instead of looking cached.
   const { data: inserted, error } = await supabase.from('items').insert({
     type: target.type, name,
-    identifier, content_hash: contentHash,
+    identifier, content_hash: 'pending:' + identifier,
     install_locus: target.locus || 'unknown', source_availability: target.avail || 'unknown'
   }).select().single();
   if (error) throw error;
-  return { item: inserted, cached: false };
+  return { item: inserted, cached: false, pendingHash: contentHash };
 }
 
 export async function dispatchTarget(supabase, target, { batchId, force, spawnFn }) {
