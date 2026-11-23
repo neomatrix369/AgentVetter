@@ -740,3 +740,33 @@ test('given model reasoning quotes a secret when routing persists then the store
   assert.ok(stored.includes('[REDACTED_KEY]'));
   assert.ok(JSON.parse(stored).reasoning, 'envelope still carries its reasoning');
 });
+
+test('given a quoted Bearer phrase in reasoning when routing persists then the stored message still parses', async () => {
+  /**
+   * Scenario: masking a Bearer phrase inside reasoning keeps the stored finding valid JSON.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   *
+   * Given SIE reasoning quotes a Bearer phrase followed by a closing quote,
+   * When routing writes the routing_review finding,
+   * Then the stored message parses and omits the token.
+   */
+  // -- Given --
+  const token = 'abc.def.' + 'ghi';
+  const supabase = createRouterSupabaseStub();
+
+  // -- When --
+  await withRouterEnv(() => runRoute('batch-1', {
+    getSupabaseFn: () => supabase,
+    callSieFn: async () => ({
+      escalate: false,
+      low_confidence: false,
+      reasoning: `The header Bearer ${token} is sent unencrypted.`,
+    }),
+  }));
+
+  // -- Then --
+  const stored = supabase.calls.inserts[0].message;
+  assert.ok(!stored.includes(token), 'token must not be stored');
+  assert.ok(JSON.parse(stored).reasoning, 'stored message must parse as JSON');
+});
+
