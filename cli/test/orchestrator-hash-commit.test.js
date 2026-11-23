@@ -57,12 +57,7 @@ function fakeSupabase(existing) {
         insert() {
           return { select() { return { single: async () => ({ data: { id: 'run-1' }, error: null }) }; } };
         },
-        update() {
-          // Chainable: failStuckRuns uses .eq().eq().lt(); the failure path uses .eq().
-          const done = { error: null };
-          const chain = { eq: () => chain, lt: () => chain, then: (resolve) => resolve(done) };
-          return chain;
-        },
+        update() { return { eq: async () => ({ error: null }) }; },
       };
     },
     rpc: async () => ({ error: null }),

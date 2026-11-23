@@ -115,9 +115,11 @@ function createSupabaseStub({
           calls.updates += 1;
           if (table === 'scan_runs') {
             calls.failedUpdates += 1;
-            // Chainable: failStuckRuns chains .eq().eq().lt() before the failure path's .eq().
-            const chain = { eq: () => chain, lt: () => chain, then: (resolve) => resolve({ error: null }) };
-            return chain;
+            return {
+              eq() {
+                return makeThenable({ data: null, error: null });
+              },
+            };
           }
           if (table === 'items') calls.itemUpdates.push(patch);
           const base = byHashItem || byIdentItem || { id: itemId };

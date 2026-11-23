@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Re-judging a finding replaces its earlier judge panel run instead of adding a second
+  verdict. Previously reruns inflated the judge tables.
+- Removed the legacy `check_call` and `pre_tool_use_hook` from the guard. Nothing on the
+  live path used them, and they skipped the staleness and tamper checks.
+- Bootstrap image is pinned by digest and `modal` to 1.5.1, so rebuilds do not drift.
+
+### Fixed
+- Removed README links to four user-guide pages that did not exist.
+
 ### Added
 - Monk Kit PoC (slice 58, ADR-0001): `MANIFEST`, `common.yaml`, `latest.yaml`,
   `v1.0.0.yaml` and a `bootstrap/` image that provisions managed Supabase,
