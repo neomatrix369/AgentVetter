@@ -365,4 +365,3 @@ test('given a quoted multi-word api_key and password when maskSecrets then the w
     assert.ok(!out.includes(word), `leaked word: ${word}`);
   }
 });
-
