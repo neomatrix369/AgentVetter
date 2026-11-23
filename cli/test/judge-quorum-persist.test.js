@@ -29,14 +29,17 @@ test('given two answered panel judges when coerceFinal then the final verdict st
   assert.equal(coerceFinal(finalJudge, judgements).verdict, 'true_positive');
 });
 
-function fakeJudgeSupabase({ runs, findings, items }) {
-  const inserted = { panel_runs: [], judgements: [] };
+function fakeJudgeSupabase({ runs, findings, items, priorPanelRuns = [] }) {
+  const inserted = { panel_runs: [], judgements: [], deleted: [] };
   return {
     inserted,
     from(table) {
-      const rowsFor = { scan_runs: runs, findings, items };
+      const rowsFor = { scan_runs: runs, findings, items, judge_panel_runs: priorPanelRuns };
       const result = { data: rowsFor[table] || [], error: null };
       const chain = {
+        delete() {
+          return { in: async (_col, ids) => { inserted.deleted.push({ table, ids }); return { error: null }; } };
+        },
         select() { return chain; },
         eq() { return chain; },
         neq() { return chain; },
@@ -96,4 +99,24 @@ test('given a panel run with judgements when persistPanelRun then run and judgem
   assert.equal(supabase.inserted.panel_runs[0].judgements, undefined);
   assert.equal(supabase.inserted.judgements[0].panel_run_id, 'panel-1');
   assert.equal(supabase.inserted.judgements[0].slot, 1);
+});
+
+test('given an earlier panel run for the same finding when persistPanelRun then the old run and its judgements are removed first', async () => {
+  // -- Given --
+  const supabase = fakeJudgeSupabase({ priorPanelRuns: [{ id: 'old-1' }] });
+  const panelRun = {
+    scan_run_id: 'run-1', item_id: 'item-1', finding_id: 'f-1',
+    answered_count: 1, total_judges: 1, disagreement: false,
+    final_verdict: 'needs_review', judgements: [],
+  };
+
+  // -- When --
+  await persistPanelRun(supabase, panelRun);
+
+  // -- Then --
+  assert.deepEqual(supabase.inserted.deleted, [
+    { table: 'judge_panel_judgements', ids: ['old-1'] },
+    { table: 'judge_panel_runs', ids: ['old-1'] },
+  ]);
+  assert.equal(supabase.inserted.panel_runs.length, 1);
 });

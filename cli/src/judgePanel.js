@@ -431,10 +431,28 @@ const PANEL_RUN_COLUMNS = [
   'prompt_version', 'sie_run_id', 'inventory_note',
 ];
 
+/**
+ * Remove the panel runs (and their judgements) already stored for a finding.
+ * A rerun replaces the earlier verdict instead of adding a second one.
+ */
+export async function clearPriorPanelRuns(supabase, findingId) {
+  const { data: prior, error } = await supabase
+    .from('judge_panel_runs').select('id').eq('finding_id', findingId);
+  if (error) throw error;
+  const ids = (prior || []).map((r) => r.id);
+  if (!ids.length) return;
+  const { error: judgementError } = await supabase
+    .from('judge_panel_judgements').delete().in('panel_run_id', ids);
+  if (judgementError) throw judgementError;
+  const { error: runError } = await supabase.from('judge_panel_runs').delete().in('id', ids);
+  if (runError) throw runError;
+}
+
 /** Insert one panel run and its judgements, writing only judge_panel_runs columns. */
 export async function persistPanelRun(supabase, panelRun) {
   const judgements = panelRun.judgements || [];
   const row = Object.fromEntries(PANEL_RUN_COLUMNS.map((k) => [k, panelRun[k] ?? null]));
+  if (row.finding_id) await clearPriorPanelRuns(supabase, row.finding_id);
   const { data: saved, error } = await supabase
     .from('judge_panel_runs').insert(row).select().single();
   if (error) throw error;
