@@ -18,19 +18,30 @@ EVIDENCE_FIELDS: tuple[str, ...] = ("snippet", "console_output", "detail", "mess
 _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"Bearer\s+\S+", re.IGNORECASE), "Bearer [REDACTED]"),
     (
-        re.compile(r"\b(sk-|sk-ant-|ospy_|tsi_|dashscope)[A-Za-z0-9_-]{8,}\b", re.IGNORECASE),
+        re.compile(
+            r"\b(sk-|sk-ant-|ospy_|tsi_|dashscope)[A-Za-z0-9_-]{8,}\b", re.IGNORECASE | re.ASCII
+        ),
         "[REDACTED_KEY]",
     ),
     (
-        re.compile(r"api[_-]?key[\"']?\s*[:=]\s*(?:\"[^\"]*\"|'[^']*'|[^\"'&\s]+)", re.IGNORECASE),
+        re.compile(
+            r"api[_-]?key[\"']?\s*[:=]\s*(?:\"[^\"\r\n]*\"|\'[^\'\r\n]*\'|[\"\']?[^\"\'&\s]+)",
+            re.IGNORECASE,
+        ),
         "api_key=[REDACTED]",
     ),
     (re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b", re.ASCII), "[REDACTED_TOKEN]"),
     (re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b", re.ASCII), "[REDACTED_TOKEN]"),
     (re.compile(r"\bAKIA[0-9A-Z]{16}\b", re.ASCII), "[REDACTED_TOKEN]"),
-    (re.compile(r"\b(sk|rk)[_-](live|test)[_-][A-Za-z0-9]{8,}\b", re.IGNORECASE), "[REDACTED_KEY]"),
     (
-        re.compile(r"password[\"']?\s*[:=]\s*(?:\"[^\"]*\"|'[^']*'|[^\"'&\s]+)", re.IGNORECASE),
+        re.compile(r"\b(sk|rk)[_-](live|test)[_-][A-Za-z0-9]{8,}\b", re.IGNORECASE | re.ASCII),
+        "[REDACTED_KEY]",
+    ),
+    (
+        re.compile(
+            r"password[\"']?\s*[:=]\s*(?:\"[^\"\r\n]*\"|\'[^\'\r\n]*\'|[\"\']?[^\"\'&\s]+)",
+            re.IGNORECASE,
+        ),
         "password=[REDACTED]",
     ),
 )

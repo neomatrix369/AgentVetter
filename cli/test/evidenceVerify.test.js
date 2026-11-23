@@ -365,3 +365,26 @@ test('given a quoted multi-word api_key and password when maskSecrets then the w
     assert.ok(!out.includes(word), `leaked word: ${word}`);
   }
 });
+
+test('given an unterminated quote and a non-ASCII prefix when maskSecrets then both values are still masked', () => {
+  /**
+   * Scenario: a stray quote does not stop masking, and ASCII word boundaries match the sandbox.
+   * Slice: stored-evidence masking (PR #212 review follow-up).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a password with no closing quote and a key that follows a non-ASCII letter,
+   * When maskSecrets runs,
+   * Then neither value remains.
+   */
+  // -- Given --
+  const pw = 'hunter' + '2secret';
+  const key = 'abcdefgh' + '12345678';
+
+  // -- When --
+  const out = maskSecrets(`password="${pw} then \u00e9sk-ant-${key}`).text;
+
+  // -- Then --
+  assert.ok(!out.includes(pw), 'unterminated password leaked');
+  assert.ok(!out.includes(key), 'key after non-ASCII letter leaked');
+});

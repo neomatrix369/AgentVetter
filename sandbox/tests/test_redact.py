@@ -121,3 +121,24 @@ def test_given_quoted_multi_word_api_key_and_password_when_redacted_then_whole_v
     ### Then
     for word in ("alpha", "beta", "gamma", "one", "two", "three"):
         assert word not in out, word
+
+
+def test_given_unterminated_quote_and_non_ascii_prefix_when_redacted_then_both_values_are_masked() -> (
+    None
+):
+    """Scenario: a stray quote does not stop masking, and ASCII boundaries match the CLI.
+
+    Slice: stored-evidence masking (PR #212 review follow-up).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    pw = "hunter" + "2secret"
+    key = "abcdefgh" + "12345678"
+
+    ### When
+    out = redact.redact_secrets(f'password="{pw} then \u00e9sk-ant-{key}')
+
+    ### Then
+    assert pw not in out
+    assert key not in out
