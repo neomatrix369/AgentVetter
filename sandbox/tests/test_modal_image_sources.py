@@ -1,6 +1,8 @@
 """Scenario: every sandbox module scan_app imports is baked into the Modal image.
 
 Slice: Modal image source parity (regression from the redaction change, PR #212).
+CONTRACT_SHAPE: bounded-change
+Outcome anchor: Every sandbox module the scan imports ships in the Modal image
 
 Local tests put sandbox/ on sys.path, so a missing module only fails on a remote
 Modal worker. This test reads scan_app.py and checks each sandbox import is

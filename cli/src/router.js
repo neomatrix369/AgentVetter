@@ -1,4 +1,5 @@
 import { getSupabase } from './supabaseClient.js';
+import { maskSecrets } from './evidenceVerify.js';
 
 const SIE_TIMEOUT_MS = 15000;
 const MS_TIMEOUT_MS = 30000;
@@ -189,7 +190,8 @@ async function replaceRouterFinding(supabase, scanRun, severity, category, envel
     severity,
     category,
     scanner_source: 'tiered_router',
-    message: JSON.stringify(envelope),
+    // Model reasoning can quote secrets from scanned code; mask before the anon-readable table.
+    message: maskSecrets(JSON.stringify(envelope)).text,
   });
   if (error) {
     console.error(`[critical] Insert failed for scan_run ${scanRun.id}: ${error.message}`);
