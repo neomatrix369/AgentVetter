@@ -352,3 +352,102 @@ def test_given_versioned_release_identifier_when_redacted_then_text_is_unchanged
 
     ### When / Then
     assert redact.redact_secrets(text) == text
+
+
+FAKE_CF_40 = "a1B2c3D4e5F6g7H8i9J0" * 2
+
+
+def test_given_each_documented_cloudflare_prefix_when_redacted_then_token_is_masked() -> None:
+    """Scenario: user, account and global-key Cloudflare tokens are all masked.
+
+    Slice: 79 security hardening (GWT-62.3, amended).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    cases = ["cfut_" + FAKE_CF_40, "cfat_" + FAKE_CF_40, "cfk_" + FAKE_CF_40]
+
+    ### When / Then
+    for token in cases:
+        assert redact.redact_secrets(f"token {token} end") == "token [REDACTED] end", token
+
+
+def test_given_cloudflare_prefix_with_39_characters_when_redacted_then_text_is_unchanged() -> None:
+    """Scenario: a Cloudflare-looking string shorter than the documented length is left alone.
+
+    Slice: 79 security hardening (GWT-62.3, amended).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    text = "token cfut_" + FAKE_CF_40[:39] + " end"
+
+    ### When / Then
+    assert redact.redact_secrets(text) == text
+
+
+def test_given_legacy_unprefixed_cloudflare_token_when_redacted_then_text_is_unchanged() -> None:
+    """Scenario: a legacy 40-character Cloudflare token has no shape to match, so it is not masked.
+
+    Slice: 79 security hardening (GWT-62.3, amended).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    text = "token " + FAKE_CF_40 + " end"
+
+    ### When / Then
+    assert redact.redact_secrets(text) == text
+
+
+def test_given_unlabelled_netlify_token_when_redacted_then_text_is_unchanged() -> None:
+    """Scenario: a Netlify token without its label is not masked, to avoid hiding hashes.
+
+    Slice: 79 security hardening (GWT-62.3, amended).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    text = "token abcdefghijklmnop12345 end"
+
+    ### When / Then
+    assert redact.redact_secrets(text) == text
+
+
+def test_given_mariadb_redis_and_amqp_uris_when_redacted_then_each_uri_is_masked() -> None:
+    """Scenario: the remaining connection-string schemes in the changelog are masked.
+
+    Slice: 79 security hardening (GWT-62.2).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    cases = [
+        "mariadb://" + "u:p" + "@db/x",
+        "redis://" + ":pw" + "@cache:6379/0",
+        "amqp://" + "guest:g" + "@broker/vhost",
+    ]
+
+    ### When / Then
+    for uri in cases:
+        assert redact.redact_secrets(f"dsn={uri} end") == "dsn=[REDACTED] end", uri
+
+
+def test_given_jwt_in_evidence_row_when_redact_row_then_snippet_is_masked() -> None:
+    """Scenario: a JWT in an evidence row's snippet is masked by the write-path helper.
+
+    Slice: 79 security hardening (GWT-62.1, write path).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    jwt = "eyJ" + "hbGciOiJIUzI1NiJ9" + "." + "eyJzdWIiOiIxMjMifQ" + "." + "c2lnbmF0dXJlMTIz"
+    row = {"snippet": "auth=" + jwt, "scanner_source": "Snyk"}
+
+    ### When
+    out = redact.redact_row(row)
+
+    ### Then
+    assert jwt not in out["snippet"]
+    assert out["snippet"] == "auth=[REDACTED]"
+    assert out["scanner_source"] == "Snyk"

@@ -581,3 +581,73 @@ test('given a v1.0 release identifier when maskSecrets then the text is unchange
   const text = 'release v1.0-release-20241231 shipped';
   assert.equal(maskSecrets(text).text, text);
 });
+
+test('given cfat_ and cfk_ Cloudflare tokens when maskSecrets then each is masked', () => {
+  /**
+   * Scenario: account and global-key Cloudflare tokens are masked, matching the sandbox.
+   * Slice: 79 security hardening (GWT-62.3, amended).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given account and global-key Cloudflare tokens with 40 characters,
+   * When maskSecrets runs,
+   * Then each token is replaced with the placeholder.
+   */
+  // -- Given / When / Then --
+  const body = 'a1B2c3D4e5F6g7H8i9J0' + 'a1B2c3D4e5F6g7H8i9J0';
+  assert.equal(maskSecrets('t cfat_' + body + ' e').text, 't [REDACTED] e');
+  assert.equal(maskSecrets('t cfk_' + body + ' e').text, 't [REDACTED] e');
+});
+
+test('given a 39-character cfut_ string and a legacy 40-character token when maskSecrets then both are unchanged', () => {
+  /**
+   * Scenario: a short Cloudflare-looking string and a legacy unprefixed token are not masked.
+   * Slice: 79 security hardening (GWT-62.3, amended).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a cfut_ string with 39 characters and a 40-character unprefixed token,
+   * When maskSecrets runs,
+   * Then both strings are unchanged.
+   */
+  // -- Given / When / Then --
+  const body = 'a1B2c3D4e5F6g7H8i9J0' + 'a1B2c3D4e5F6g7H8i9J0';
+  const short = 't cfut_' + body.slice(0, 39) + ' e';
+  const legacy = 't ' + body + ' e';
+  assert.equal(maskSecrets(short).text, short);
+  assert.equal(maskSecrets(legacy).text, legacy);
+});
+
+test('given an unlabelled Netlify token when maskSecrets then the text is unchanged', () => {
+  /**
+   * Scenario: a Netlify token without its label is not masked, to avoid hiding hashes.
+   * Slice: 79 security hardening (GWT-62.3, amended).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a 17-character Netlify-looking token with no label,
+   * When maskSecrets runs,
+   * Then the text is unchanged.
+   */
+  // -- Given / When / Then --
+  const text = 'token abcdefghijklmnop12345 end';
+  assert.equal(maskSecrets(text).text, text);
+});
+
+test('given mariadb, redis and amqp URIs when maskSecrets then each is masked', () => {
+  /**
+   * Scenario: the remaining connection-string schemes are masked, matching the sandbox.
+   * Slice: 79 security hardening (GWT-62.2).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given one connection string per remaining scheme,
+   * When maskSecrets runs,
+   * Then each is replaced with the placeholder.
+   */
+  // -- Given / When / Then --
+  const cases = ['mariadb://' + 'u:p' + '@db/x', 'redis://' + ':pw' + '@cache:6379/0', 'amqp://' + 'guest:g' + '@broker/vhost'];
+  for (const uri of cases) {
+    assert.equal(maskSecrets(`dsn=${uri} end`).text, 'dsn=[REDACTED] end', uri);
+  }
+});

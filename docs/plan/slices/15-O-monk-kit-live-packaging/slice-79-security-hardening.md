@@ -39,7 +39,7 @@
 - Commit pattern: `fix(slice-79): extend redact rules for JWT, DB URIs, non-prefix tokens`
 
 ## Branch
-`slice/62-security-hardening`
+`slice/79-security-hardening`
 
 ## Spec (GWT)
 
@@ -81,7 +81,7 @@
 - [ ] Existing redact tests pass (or are added for new patterns)
 
 ## Before-Checks [GATE]
-- [ ] Branch `slice/62-security-hardening` created
+- [ ] Branch `slice/79-security-hardening` created
 - [ ] Slice 58 ✅ on `main` (sandbox/ exists)
 
 ## After-Checks [GATE]
