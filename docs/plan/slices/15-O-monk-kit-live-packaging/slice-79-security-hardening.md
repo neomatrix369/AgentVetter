@@ -61,7 +61,7 @@
 **And** unlabelled Netlify tokens and legacy unprefixed Cloudflare tokens are **not** masked: neither has a distinguishing shape, and a bare 40-character pattern would hit git commit SHAs
 **And** a release identifier such as `v1.0-release-20241231` is left unchanged
 
-**Amendment note (2026-11-24):** the original wording used `v1.0-...` as the Cloudflare shape, which is not a Cloudflare format. Re-fetched 2026-11-24 from developers.cloudflare.com/fundamentals/api/get-started/token-formats/: user `cfut_`, account `cfat_` and global key `cfk_`, each followed by 40 characters and a checksum (checksum length not stated); legacy tokens are unprefixed. Fly: re-fetched docs.fly.io/security/tokens: only `fm2_` is documented (as `FlyV1 fm2_...`); `fo1_`, `fm1a_` and `fm1r_` are not documented. The `fo1_` alternative in the rule is kept as an unverified legacy-coverage choice pending operator decision.
+**Amendment note (2026-11-24):** the original wording used `v1.0-...` as the Cloudflare shape, which is not a Cloudflare format. Re-fetched 2026-11-24 from developers.cloudflare.com/fundamentals/api/get-started/token-formats/: user `cfut_`, account `cfat_` and global key `cfk_`, each followed by 40 characters and a checksum (checksum length not stated); legacy tokens are unprefixed. Fly: re-fetched docs.fly.io/security/tokens: only `fm2_` is documented (as `FlyV1 fm2_...`); `fo1_`, `fm1a_` and `fm1r_` are not documented. The `fo1_` alternative is kept by operator decision (2026-11-24): undocumented by Fly, so it can only over-mask.
 
 ### GWT-62.4 — Local `file://` dashboard unaffected
 **Given** `prototypes/dc-dashboard/AgentVetter.dc.html` opened via `file://` protocol

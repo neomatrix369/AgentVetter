@@ -1,7 +1,7 @@
 """Scenario: secret-looking values are masked before evidence is stored.
 
 Slice: evidence redaction (open-item follow-up to the anon-exposure review).
-@contract-shape:bounded-change
+@contract-shape:pure-function
 Outcome anchor: Stored evidence never carries raw secret-looking values
 
 The fake credentials are split across string literals so gitleaks does not
@@ -67,7 +67,7 @@ def test_given_api_key_assignment_when_redacted_then_value_is_masked() -> None:
     """Scenario: an api_key assignment in evidence is masked.
 
     Slice: evidence redaction (PR #212 review follow-up).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given
@@ -88,7 +88,7 @@ def test_given_github_aws_live_key_and_password_when_redacted_then_each_value_be
     """Scenario: common credential formats in evidence are replaced by placeholders.
 
     Slice: stored-evidence masking (PR #212 review follow-up).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given
@@ -110,7 +110,7 @@ def test_given_quoted_multi_word_api_key_and_password_when_redacted_then_whole_v
     """Scenario: a quoted value with spaces is masked to its closing quote.
 
     Slice: stored-evidence masking (PR #212 review follow-up).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given
@@ -128,7 +128,7 @@ def test_given_unterminated_quote_with_spaces_when_redacted_then_rest_of_line_is
     """Scenario: a password with no closing quote is masked to the end of its line.
 
     Slice: stored-evidence masking (PR #212 review follow-up).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given
@@ -142,7 +142,7 @@ def test_given_api_key_spanning_newline_when_redacted_then_whole_value_is_masked
     """Scenario: a quoted value that spans lines is masked in full.
 
     Slice: stored-evidence masking (PR #212 review follow-up).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given
@@ -158,7 +158,7 @@ def test_given_key_after_non_ascii_letter_when_redacted_then_letter_is_kept_and_
     """Scenario: ASCII word boundaries mask a key after a non-ASCII letter, as the CLI does.
 
     Slice: stored-evidence masking (PR #212 review follow-up).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given
@@ -174,7 +174,7 @@ def test_given_non_breaking_space_after_password_label_when_redacted_then_quoted
     """Scenario: Unicode whitespace after a label is matched the same way by the CLI and the sandbox.
 
     Slice: stored-evidence masking (PR #212 review follow-up).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given
@@ -190,7 +190,7 @@ def test_given_byte_order_mark_as_separator_when_redacted_then_bearer_and_passwo
     """Scenario: a zero-width no-break space counts as whitespace in both the CLI and the sandbox.
 
     Slice: stored-evidence masking (PR #212 review follow-up).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given / When / Then
@@ -204,7 +204,7 @@ def test_given_control_and_zero_width_separators_when_redacted_then_bearer_token
     """Scenario: NEL, unit-separator and zero-width-space characters separate a Bearer token as whitespace.
 
     Slice: stored-evidence masking (PR #212 review follow-up).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given / When / Then
@@ -234,7 +234,7 @@ def test_given_jwt_in_any_position_when_redacted_then_token_is_masked(
     """Scenario: a JWT is masked wherever it appears in scanned text.
 
     Slice: 79 security hardening (GWT-62.1).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given / When / Then
@@ -257,7 +257,7 @@ def test_given_connection_uri_when_redacted_then_whole_uri_is_masked(scheme_and_
     """Scenario: connection strings with embedded credentials are masked in full.
 
     Slice: 79 security hardening (GWT-62.2).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given / When / Then
@@ -279,13 +279,13 @@ def test_given_connection_uri_when_redacted_then_whole_uri_is_masked(scheme_and_
     ],
     ids=["cf-user", "cf-account", "cf-global", "fly-fm2", "fly-fo1", "netlify-labelled"],
 )
-def test_given_documented_service_token_when_redacted_then_token_is_masked(
+def test_given_service_token_in_amended_format_when_redacted_then_token_is_masked(
     text: str, expected: str
 ) -> None:
-    """Scenario: documented prefixed service tokens are masked; a labelled Netlify value keeps only its label name.
+    """Scenario: service tokens in the amended formats are masked (fo1_ kept by operator decision); a labelled Netlify value keeps only its label name.
 
     Slice: 79 security hardening (GWT-62.3, amended).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given / When / Then
@@ -313,7 +313,7 @@ def test_given_shape_outside_the_rules_when_redacted_then_text_is_unchanged(text
     """Scenario: hashes, release identifiers, short or legacy Cloudflare strings and unlabelled Netlify tokens are left unchanged.
 
     Slice: 79 security hardening (GWT-62.3 negatives, amended).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given / When / Then
@@ -337,7 +337,7 @@ def test_given_unicode_boundary_and_spacing_when_redacted_then_masking_matches_c
     """Scenario: non-ASCII letters and Unicode spaces are handled the same way in the sandbox and the CLI.
 
     Slice: 79 security hardening (review follow-up, parity).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given / When / Then
@@ -348,7 +348,7 @@ def test_given_jwt_in_evidence_row_when_redact_row_then_snippet_is_masked() -> N
     """Scenario: a JWT in an evidence row's snippet is masked by the write-path helper.
 
     Slice: 79 security hardening (GWT-62.1, write path).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given
@@ -366,17 +366,19 @@ def test_given_adversarial_jwt_like_run_when_redacted_then_it_finishes_quickly()
     """Scenario: a long run of JWT-like fragments is scanned in linear time (no ReDoS).
 
     Slice: 79 security hardening (review follow-up, JWT rule).
-    @contract-shape:bounded-change
+    @contract-shape:pure-function
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     import time
 
     ### Given
     text = "eyJ-" * 5000
+    dotted = ("eyJ" + "a" * 50 + ".") * 400
 
     ### When
     started = time.perf_counter()
     redact.redact_secrets(text)
+    redact.redact_secrets(dotted)
     elapsed = time.perf_counter() - started
 
     ### Then

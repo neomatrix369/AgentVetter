@@ -322,7 +322,7 @@ test('given GitHub, AWS, live-key and password formats when maskSecrets then eac
   /**
    * Scenario: common credential formats in evidence text are replaced by placeholders.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * @contract-shape:bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given one line per credential format, each surrounded by plain text,
@@ -347,7 +347,7 @@ test('given a quoted multi-word api_key and password when maskSecrets then the w
   /**
    * Scenario: a quoted value with spaces is masked to its closing quote, not just its first word.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * @contract-shape:bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given an api_key and a password whose quoted values contain spaces,
@@ -370,7 +370,7 @@ test('given an unterminated quote with spaces when maskSecrets then the rest of 
   /**
    * Scenario: a password with no closing quote is masked to the end of its line.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * @contract-shape:bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a password whose opening quote never closes and whose value has spaces,
@@ -388,7 +388,7 @@ test('given an api_key value spanning a newline when maskSecrets then the whole 
   /**
    * Scenario: a quoted value that spans lines is masked in full, including its second line.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * @contract-shape:bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a quoted api_key whose value contains a newline,
@@ -406,7 +406,7 @@ test('given a key after a non-ASCII letter when maskSecrets then the key is mask
   /**
    * Scenario: word boundaries are ASCII-only, so a key after a non-ASCII letter is still masked.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * @contract-shape:bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a key immediately after a non-ASCII letter,
@@ -424,7 +424,7 @@ test('given a non-breaking space after a password label when maskSecrets then th
   /**
    * Scenario: Unicode whitespace after a label is matched the same way by the CLI and the sandbox.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * @contract-shape:bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a password label followed by a non-breaking space and a quoted value,
@@ -442,7 +442,7 @@ test('given a byte-order mark as the separator when maskSecrets then Bearer and 
   /**
    * Scenario: a zero-width no-break space counts as whitespace in both the CLI and the sandbox.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * @contract-shape:bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a Bearer token and a password separated by a byte-order mark,
@@ -458,7 +458,7 @@ test('given control and zero-width separators when maskSecrets then Bearer token
   /**
    * Scenario: NEL, unit-separator and zero-width-space characters separate a Bearer token as whitespace.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * @contract-shape:bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a Bearer token separated by NEL, a unit separator, or a zero-width space,
@@ -475,7 +475,7 @@ test('given a JWT in any position when maskSecrets then the token is masked', ()
   /**
    * Scenario: a JWT is masked wherever it appears in scanned text, matching the sandbox.
    * Slice: 79 security hardening (GWT-62.1).
-   * @contract-shape:bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a JWT after nothing, after an equals sign, after a dash, and after an underscore,
@@ -499,7 +499,7 @@ test('given connection URIs for every supported scheme when maskSecrets then eac
   /**
    * Scenario: connection strings with embedded credentials are masked in full, matching the sandbox.
    * Slice: 79 security hardening (GWT-62.2).
-   * @contract-shape:bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given one connection string per supported scheme,
@@ -521,11 +521,11 @@ test('given connection URIs for every supported scheme when maskSecrets then eac
   }
 });
 
-test('given documented service tokens when maskSecrets then each is masked', () => {
+test('given service tokens in the amended formats when maskSecrets then each is masked', () => {
   /**
-   * Scenario: documented prefixed service tokens are masked; a labelled Netlify value keeps only its label name.
+   * Scenario: service tokens in the amended formats are masked (fo1_ kept by operator decision); a labelled Netlify value keeps only its label name.
    * Slice: 79 security hardening (GWT-62.3, amended).
-   * @contract-shape:bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given Cloudflare user, account and global tokens, Fly tokens, and a labelled Netlify token,
@@ -552,7 +552,7 @@ test('given shapes outside the rules when maskSecrets then the text is unchanged
   /**
    * Scenario: hashes, release identifiers, short or legacy Cloudflare strings and unlabelled Netlify tokens are left unchanged.
    * Slice: 79 security hardening (GWT-62.3 negatives, amended).
-   * @contract-shape:bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given text that resembles a token but matches no rule,
@@ -577,7 +577,7 @@ test('given Unicode boundary and spacing cases when maskSecrets then results mat
   /**
    * Scenario: non-ASCII letters and Unicode spaces are handled the same way in the CLI and the sandbox.
    * Slice: 79 security hardening (review follow-up, parity).
-   * @contract-shape:bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a Netlify label after a non-ASCII letter and a URI and Fly token separated by non-breaking spaces,
@@ -597,7 +597,7 @@ test('given an adversarial JWT-like run when maskSecrets then it finishes quickl
   /**
    * Scenario: a long run of JWT-like fragments is scanned in linear time (no ReDoS).
    * Slice: 79 security hardening (review follow-up, JWT rule).
-   * @contract-shape:bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a long run of eyJ- fragments with no dots,
@@ -606,7 +606,9 @@ test('given an adversarial JWT-like run when maskSecrets then it finishes quickl
    */
   // -- Given / When / Then --
   const text = 'eyJ-'.repeat(5000);
+  const dotted = ('eyJ' + 'a'.repeat(50) + '.').repeat(400);
   const started = performance.now();
   maskSecrets(text);
+  maskSecrets(dotted);
   assert.ok(performance.now() - started < 2000, 'redaction must stay linear');
 });

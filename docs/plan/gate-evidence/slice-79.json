@@ -33,15 +33,11 @@
     },
     {
       "cmd": "file:// DevTools check on AgentVetter.dc.html (headless Chromium)",
-      "result": "0 CSP violations. Second GWT-62.4 clause (Supabase https calls not blocked by in-HTML policy) NOT probed."
+      "result": "0 CSP violations. Second clause probed in a separate entry below."
     },
     {
       "cmd": "./scripts/setup-supabase.sh (no --force), cloud project",
       "result": "exit 0, {\"status\":\"ready\"} (no-op)"
-    },
-    {
-      "cmd": "./scripts/setup-modal.sh --non-interactive (operator approved)",
-      "result": "first run exit 1 (python-dotenv missing in Modal CLI tool env, no changes); installed into that env only; rerun exit 0: synced two secrets, deployed agentvetter-scan from working tree. NOT a clean environment."
     },
     {
       "cmd": "WebFetch Cloudflare token-format docs (2026-11-24)",
@@ -50,6 +46,14 @@
     {
       "cmd": "WebFetch Fly.io token docs (2026-11-24)",
       "result": "Only fm2_ documented (as 'FlyV1 fm2_...'). fo1_, fm1a_, fm1r_ NOT documented."
+    },
+    {
+      "cmd": "playwright csp-probe: file:// page fetch to Supabase origin (GWT-62.4 second clause)",
+      "result": "fetch reached the server: HTTP 401 (no API key). No CSP refusal logged. Clause met."
+    },
+    {
+      "cmd": "env -i HOME PATH LANG ./scripts/setup-modal.sh --non-interactive (clean-env rerun)",
+      "result": "exit 0; secrets synced; agentvetter-scan redeployed. CAVEAT: python-dotenv was installed into the Modal CLI tool env earlier (no other changes); the tool env is not pristine and env -i does not reset it. Needs operator decision."
     }
   ],
   "coverage_by_gwt": {
@@ -57,7 +61,7 @@
     "GWT-62.2 DB URIs": "PASS: postgres, mysql, mongodb+srv, mariadb, redis, amqp",
     "GWT-62.3 service tokens (amended)": "PASS for documented forms: cfut_/cfat_/cfk_ (40+ chars, verified against docs), Fly fm2_ (documented), labelled Netlify. Negatives PASS: 39-char, legacy unprefixed Cloudflare, unlabelled Netlify, v1.0- release identifier. OPEN: Fly fo1_ kept though undocumented; operator decision.",
     "GWT-62.4 file:// no CSP": "PASS: 0 CSP violations; second clause probed: file:// page fetch to the Supabase origin returned HTTP 401 (reached server), no CSP refusal logged",
-    "GWT-62.5 setup scripts": "PASS (clean-environment rerun): env -i with HOME/PATH/LANG only. setup-supabase.sh exit 0 ready (no-op); setup-modal.sh --non-interactive exit 0, secrets synced, agentvetter-scan redeployed from current tree. Same machine and Modal login; not a fresh machine."
+    "GWT-62.5 setup scripts": "PARTIAL: Supabase exit 0 (ready, no-op). Modal exit 0 in env -i, but the Modal tool env was not pristine (python-dotenv installed manually). Not a clean PASS until the operator accepts or reruns on a fresh tool env."
   },
   "reviews": {
     "nw-software-crafter-reviewer": "Round 2 CHANGES REQUESTED. Addressed: JWT boundary (9c41d33, RED evidence), cfat/cfk and negatives. Open: test count 15 Python / 11 JS vs the 2x-GWT budget of 10 (consolidate or justify); no execution log for earlier RED batches.",
@@ -66,9 +70,11 @@
     "nw-ddd-architect-reviewer": "APPROVED: no schema or domain change."
   },
   "open_items": [
-    "Operator decision recorded: Fly fo1_ kept (documented Fly prefix is fm2_ only).",
-    "Reviewer round 3 (nw review) and merge gate: see PR review record.",
-    "/verify-slice after reviews."
+    "GWT-62.5: operator to accept the non-pristine Modal tool env or rerun on a fresh tool env.",
+    "JWT segments longer than 2048 characters are not masked. Operator to accept as residual risk (record in DECISIONS) or lift the cap.",
+    "Historical rows are not backfilled for the new patterns. Operator to accept (DECISIONS row) or open a backfill slice.",
+    "Reviewer round on the final head (software-crafter, architect results pending at time of writing).",
+    "/verify-slice after the above."
   ],
   "verdict": "BLOCKED",
   "spec_path": "docs/plan/slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md"
