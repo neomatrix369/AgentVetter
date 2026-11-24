@@ -2,7 +2,7 @@
   "slice": "slice-79-security-hardening",
   "date": "2026-11-24",
   "branch": "slice/79-security-hardening",
-  "commit": "0ab6b86",
+  "commit": "bf691d4",
   "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23); GWT-62.3 amended 2026-11-24 to documented Cloudflare prefixes",
   "commands": [
     {
@@ -74,15 +74,16 @@
     "nw-ddd-architect-reviewer": "APPROVED: no schema or domain change."
   },
   "open_items": [
-    "Contract-shape tag form: reviewers disagree (CONTRACT_SHAPE vs @contract-shape). Operator to confirm the checker's form.",
-    "RED evidence: only the JWT dash/underscore boundary has a recorded RED run. Operator to accept the gap or waive it.",
-    "JWT timing: bounded, 2.7 s at 1 MB in JS. Operator to accept or lower the segment cap.",
-    "JWT segments over 2048 characters are not masked. Operator to accept (DECISIONS row) or lift the cap.",
-    "Historical rows are not backfilled for the new patterns. Operator to accept (DECISIONS row) or open a backfill slice.",
-    "GWT-62.5: Modal tool env was not pristine. Operator to accept or rerun on a fresh tool env.",
+    "Contract-shape tag: DECIDED by operator, @contract-shape: form (DECISIONS 2026-11-24).",
+    "RED evidence: DECIDED by operator, gap accepted and recorded (DECISIONS 2026-11-24).",
+    "JWT segment cap 2048: DECIDED by operator, residual risk accepted (DECISIONS 2026-11-24).",
+    "JWT timing: DECIDED by operator, 2.70 s JS at 1 MB accepted (DECISIONS 2026-11-24).",
+    "Historical backfill: DECIDED by operator, not backfilled, recorded (DECISIONS 2026-11-24).",
+    "GWT-62.5 Modal tool env: DECIDED by operator, accepted with caveat (DECISIONS 2026-11-24).",
     "Allowlist: .omc/ exclusion is unanchored by operator decision; tripwire test added.",
-    "Reviewer approvals on the final head are pending; all four reviewers returned NOT APPROVED on fef2e34.",
-    "/verify-slice after the above."
+    "CI: Repo lint failed on markdownlint MD037 (CHANGELOG underscores); fixed in bf691d4; all PR checks pass.",
+    "Reviewer approvals on head bf691d4 are pending (last round NOT APPROVED on fef2e34).",
+    "/verify-slice (user-invoked) is pending after reviewer approvals."
   ],
   "verdict": "BLOCKED",
   "spec_path": "docs/plan/slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md"
