@@ -54,10 +54,14 @@
 **When** `redact_secrets(text)` is called
 **Then** the URI (including embedded credentials) is replaced with `[REDACTED]`
 
-### GWT-62.3 — Non-prefix service tokens redacted
-**Given** a scan finding containing a Cloudflare token (`v1.0-...`), Fly.io token, or Netlify token
+### GWT-62.3 — Service tokens redacted (amended 2026-11-24)
+**Given** a scan finding containing a Cloudflare API token in a documented prefixed format (`cfut_`, `cfat_` or `cfk_` followed by 40+ characters), a Fly.io token (`fo1_` or `fm2_`, optionally preceded by `FlyV1`), or a Netlify token written after a `NETLIFY_AUTH_TOKEN=`-style label
 **When** `redact_secrets(text)` is called
-**Then** the token is replaced with `[REDACTED]`
+**Then** the token is replaced with `[REDACTED]` (Netlify: `netlify_token=[REDACTED]`)
+**And** unlabelled Netlify tokens and legacy unprefixed Cloudflare tokens are **not** masked: neither has a distinguishing shape, and a bare 40-character pattern would hit git commit SHAs
+**And** a release identifier such as `v1.0-release-20241231` is left unchanged
+
+**Amendment note (2026-11-24):** the original wording used `v1.0-...` as the Cloudflare shape. Cloudflare's documented formats are `cfut_` (user), `cfat_` (account) and `cfk_` (global key) prefixes, and legacy tokens are unprefixed. `v1.0-` is not a Cloudflare format. Source: Cloudflare Fundamentals docs, Token formats (developers.cloudflare.com/fundamentals/api/get-started/token-formats/), as summarised in research supplied by the operator; not re-fetched in this session.
 
 ### GWT-62.4 — Local `file://` dashboard unaffected
 **Given** `prototypes/dc-dashboard/AgentVetter.dc.html` opened via `file://` protocol
