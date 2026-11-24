@@ -198,7 +198,7 @@ function findingSummary(candidate) {
     severity: finding.severity,
     category: finding.category,
     scanner_source: finding.scanner_source,
-    message: finding.message,
+    message: maskText(finding.message),
     file_path: finding.file_path || evidence.file_path,
     location: finding.location || evidence.location,
   };
@@ -228,7 +228,7 @@ function buildFinalUserContent(candidate, judgements) {
       status: j.status,
       verdict: j.verdict,
       confidence: j.confidence,
-      reason: j.reason,
+      reason: maskText(j.reason),
     })),
   });
 }
@@ -264,7 +264,7 @@ function failedJudgeRecord({ slot, model, role, started, err }) {
     prompt_version: PROMPT_VERSION,
     run_id: `${role}-${slot}-failed-${started}`,
     timestamp: started,
-    error_message: String(err?.message || err).slice(0, 200),
+    error_message: maskText(String(err?.message || err)).slice(0, 200),
   };
 }
 

@@ -422,7 +422,7 @@ test('given a key after a non-ASCII letter when maskSecrets then the key is mask
 
 test('given a non-breaking space after a password label when maskSecrets then the quoted value is masked', () => {
   /**
-   * Scenario: Unicode whitespace after a label is matched the same way by the CLI and the sandbox.
+   * Scenario: Unicode whitespace after a label is matched by the CLI (sandbox counterpart in sandbox/tests/test_redact.py).
    * Slice: stored-evidence masking (PR #212 review follow-up).
    * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
@@ -473,7 +473,7 @@ test('given control and zero-width separators when maskSecrets then Bearer token
 
 test('given a JWT in any position when maskSecrets then the token is masked', () => {
   /**
-   * Scenario: a JWT is masked wherever it appears in scanned text, matching the sandbox.
+   * Scenario: a JWT is masked wherever it appears in scanned text (sandbox counterpart in sandbox/tests/test_redact.py).
    * Slice: 79 security hardening (GWT-62.1).
    * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
@@ -497,7 +497,7 @@ test('given a JWT in any position when maskSecrets then the token is masked', ()
 
 test('given connection URIs for every supported scheme when maskSecrets then each whole URI is masked', () => {
   /**
-   * Scenario: connection strings with embedded credentials are masked in full, matching the sandbox.
+   * Scenario: connection strings with embedded credentials are masked in full (sandbox counterpart in sandbox/tests/test_redact.py).
    * Slice: 79 security hardening (GWT-62.2).
    * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
@@ -580,12 +580,12 @@ test('given shapes outside the rules when maskSecrets then the text is unchanged
 
 test('given tokens glued to text or joined by an underscore when maskSecrets then each token is masked', () => {
   /**
-   * Scenario: GitHub, live-key and AWS tokens attached to a word by an underscore are still masked.
+   * Scenario: GitHub, live-key and AWS tokens attached to a word, with or without an underscore, are still masked.
    * Slice: 79 security hardening (GWT-62.3, underscore boundary).
    * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
-   * Given GitHub, live-key and AWS tokens preceded by an underscore,
+   * Given GitHub, live-key and AWS tokens glued to a word or joined by an underscore,
    * When maskSecrets runs,
    * Then each token is replaced with its placeholder.
    */
