@@ -455,4 +455,3 @@ test('slice 79: judge text is stored with secret-looking values masked', async (
     assert.ok(stored.includes('[REDACTED_TOKEN]'), 'masked placeholder must be stored');
   });
 });
-
