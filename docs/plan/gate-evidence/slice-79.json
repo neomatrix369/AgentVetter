@@ -116,7 +116,9 @@
     "Allowlist: .omc/ exclusion is unanchored by operator decision; tripwire test added.",
     "/verify-slice (user-invoked) is pending after reviewer approvals.",
     "ASCII-only secret matching and sk- leading boundary: pending operator confirmation (DECISIONS 2026-11-24).",
-    "Glued JWT and DB URI: FIXED in ab2e4ed (DECISIONS 2026-11-24 closing row)."
+    "Glued JWT and DB URI: FIXED in ab2e4ed (DECISIONS 2026-11-24 closing row).",
+    "Gate 3 (repo-wide branch coverage 92.42%) is pre-existing on main; waiver proposed, PENDING OPERATOR.",
+    "Gate 7 TruffleHog verified result: operator run required (DECISIONS 2026-11-24)."
   ],
   "verdict": "BLOCKED",
   "spec_path": "docs/plan/slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md",
@@ -129,5 +131,5 @@
   "complexity_grade": "A",
   "complexity_passed": true,
   "static_analysis": "ruff check sandbox: clean",
-  "security_scan": "scripts/security-scan.sh exits 1 locally: Trivy HIGH/CRITICAL hits in .worktrees/* checkouts and the intentional fixtures/skills/vuln-dependency-lodash; TruffleHog 'verified' results in guard/tests/test_entry.py. CI secrets and SAST jobs pass on the branch. Operator decision needed."
+  "security_scan": "scripts/security-scan.sh: Trivy passes locally after excluding .worktrees (DECISIONS 2026-11-24). TruffleHog --only-verified not reproduced offline; operator to run with provider access and rotate if live. CI secrets and SAST pass."
 }

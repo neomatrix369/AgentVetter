@@ -238,7 +238,7 @@ if $RUN_TRIVY; then
       TRIVY_SKIP_FILES="${TRIVY_SKIP_FILES},${_envf}"
     done
     if ! trivy fs --exit-code 1 --severity HIGH,CRITICAL --quiet \
-      --skip-dirs fixtures,prototypes,internal-docs,cli/node_modules,.venv \
+      --skip-dirs fixtures,prototypes,internal-docs,cli/node_modules,.venv,.worktrees \
       --skip-files "${TRIVY_SKIP_FILES}" .; then
       fail "Trivy found HIGH/CRITICAL filesystem vulnerabilities"
       SCANS_FAILED=$((SCANS_FAILED + 1))
