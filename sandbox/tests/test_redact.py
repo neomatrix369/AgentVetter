@@ -318,6 +318,8 @@ def test_given_service_token_in_amended_format_when_redacted_then_token_is_maske
         ("tag AKIA" + "A" * 16 + "_x", "tag [REDACTED_TOKEN]_x"),
         ("tag tokenghp_" + "a" * 36 + " end", "tag token[REDACTED_TOKEN] end"),
         ("tag keyAKIA" + "A" * 16 + " end", "tag key[REDACTED_TOKEN] end"),
+        ("tag xeyJhbGciOi.abcdef.ghijkl end", "tag x[REDACTED] end"),
+        ("tag dbxpostgres://u:p@h/x end", "tag dbx[REDACTED] end"),
     ],
     ids=[
         "github-underscore-prefix",
@@ -327,6 +329,8 @@ def test_given_service_token_in_amended_format_when_redacted_then_token_is_maske
         "aws-underscore-suffix",
         "github-glued-to-word",
         "aws-glued-to-word",
+        "jwt-glued-to-word",
+        "db-uri-glued-to-word",
     ],
 )
 def test_given_token_attached_to_text_when_redacted_then_token_is_masked(

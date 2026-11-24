@@ -598,6 +598,8 @@ test('given tokens glued to text or joined by an underscore when maskSecrets the
     ['tag AKIA' + 'A'.repeat(16) + '_x', 'tag [REDACTED_TOKEN]_x'],
     ['tag tokenghp_' + 'a'.repeat(36) + ' end', 'tag token[REDACTED_TOKEN] end'],
     ['tag keyAKIA' + 'A'.repeat(16) + ' end', 'tag key[REDACTED_TOKEN] end'],
+    ['tag xeyJhbGciOi.abcdef.ghijkl end', 'tag x[REDACTED] end'],
+    ['tag dbxpostgres://u:p@h/x end', 'tag dbx[REDACTED] end'],
   ];
   for (const [input, expected] of cases) {
     assert.equal(maskSecrets(input).text, expected, input);
