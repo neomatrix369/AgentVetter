@@ -1,0 +1,57 @@
+{
+  "slice": "slice-79-security-hardening",
+  "date": "2026-11-24",
+  "branch": "slice/79-security-hardening",
+  "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23): JWT, DB URI, service-token masking; file:// CSP; setup scripts unaffected",
+  "commands": [
+    {
+      "cmd": "uv run pytest sandbox/tests --cov=sandbox",
+      "result": "382 passed; coverage 95.51% (gate 95%)",
+      "commit": "d481e02"
+    },
+    {
+      "cmd": "cd cli && npm run test:coverage",
+      "result": "237 passed, 0 failed; lines 94.68%, branches 80.45%",
+      "commit": "d481e02"
+    },
+    {
+      "cmd": "cd prototypes/dc-dashboard && npm run test:coverage",
+      "result": "424 passed, 0 failed. Live smoke (cloud Supabase from .env) passes after the project was restored; it had returned HTTP 521 while paused. Dashboard is unchanged vs main.",
+      "commit": "d481e02"
+    },
+    {
+      "cmd": "uv run ruff check sandbox/redact.py sandbox/tests/test_redact.py && ruff format --check",
+      "result": "All checks passed; formatting clean"
+    },
+    {
+      "cmd": "python3 -c \"import sandbox.redact\"",
+      "result": "exit 0"
+    },
+    {
+      "cmd": "file:// DevTools console check on prototypes/dc-dashboard/AgentVetter.dc.html (Playwright Chromium 131, headless)",
+      "result": "CSP violations: 0. Other console errors are pre-existing: file:// blocks module imports and fetch (CORS), so the dashboard's kit modules do not load over file://. Dashboard unchanged by this slice."
+    },
+    {
+      "cmd": "bash -n scripts/setup-supabase.sh; bash -n scripts/setup-modal.sh; <script> --help",
+      "result": "syntax OK; --help exit 0 for both. Live dry-run (GWT-62.5) NOT run: needs credentials; to be run by operator."
+    },
+    {
+      "cmd": "gitleaks (quality-gates T1)",
+      "result": "54 hits, all in .omc/ local session state (git-ignored; operator decision to leave). 0 hits in slice files."
+    }
+  ],
+  "coverage_by_gwt": {
+    "GWT-62.1 JWT": "PASS (tests in sandbox/tests/test_redact.py and cli/test/evidenceVerify.test.js; wired in scan_app.py redact_row and cli router maskSecrets)",
+    "GWT-62.2 DB URIs": "PASS (same tests and wiring)",
+    "GWT-62.3 service tokens": "PARTIAL: Cloudflare v1.0- and Fly fo1_/fm2_ PASS. Netlify covered only when labelled (NETLIFY_AUTH_TOKEN=...) in d481e02; unlabelled Netlify tokens are not masked by design (avoids git SHA false positives).",
+    "GWT-62.4 file:// no CSP": "PARTIAL: CSP violations 0 in DevTools check; static check (no CSP meta) passes.",
+    "GWT-62.5 setup scripts": "PARTIAL: syntax and --help pass; live dry-run pending (operator, needs credentials)."
+  },
+  "open_items": [
+    "GWT-62.5 live dry-run of scripts/setup-supabase.sh and scripts/setup-modal.sh (operator, with credentials).",
+    "Stub has ### Closing Gates section (added); /verify-slice must return COMPLETE after the items above are closed.",
+    "Code review (nw-software-crafter-reviewer) not yet run."
+  ],
+  "verdict": "BLOCKED",
+  "spec_path": "docs/plan/slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md"
+}

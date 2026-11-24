@@ -86,6 +86,14 @@
 - [ ] Local compatibility checklist above all ticked
 - [ ] No new patterns accidentally break existing redaction of AWS/GCP/GitHub tokens
 
+### Closing Gates
+- [ ] `nw-gate-evidence-validator` passes for `docs/plan/gate-evidence/slice-79.json` (currently `verdict: BLOCKED`)
+- [ ] `/verify-slice` returns COMPLETE (required final gate)
+- [ ] Code review: `nw-software-crafter-reviewer` APPROVED
+- [ ] GWT-62.4 DevTools check on `file://` run by operator (CSP violations: 0 observed in headless Chromium)
+- [ ] GWT-62.5 live dry-run of `scripts/setup-supabase.sh` and `scripts/setup-modal.sh` run by operator (needs credentials)
+- [ ] Dashboard live smoke passes on a networked machine (or the exclusion is recorded in DECISIONS.md)
+
 ## Gate Status
 📋 PLANNED
 
