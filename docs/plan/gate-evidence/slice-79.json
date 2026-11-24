@@ -37,7 +37,7 @@
     },
     {
       "cmd": "gitleaks (quality-gates T1)",
-      "result": "54 hits, all in .omc/ local session state (git-ignored; operator decision to leave). 0 hits in slice files."
+      "result": "exit 0 after adding .omc/ to the .gitleaks.toml path allowlist (operator decision: ignore .omc/ everywhere). Before the change: 54 hits, all in .omc/ local session state."
     }
   ],
   "coverage_by_gwt": {
