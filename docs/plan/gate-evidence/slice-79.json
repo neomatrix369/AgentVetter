@@ -2,7 +2,7 @@
   "slice": "slice-79-security-hardening",
   "date": "2026-11-24",
   "branch": "slice/79-security-hardening",
-  "commit": "2a25385",
+  "commit": "pending-head",
   "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23); GWT-62.3 amended 2026-11-24 to documented Cloudflare prefixes",
   "commands": [
     {
@@ -78,6 +78,11 @@
       "cmd": "uv run pytest sandbox/tests; cd cli && npm test (at 2a25385)",
       "result": "417 passed (sandbox); 242 passed, 0 failed (CLI). Ruff clean. markdownlint v0.43.0 clean.",
       "commit": "2a25385"
+    },
+    {
+      "cmd": "cd cli && npm test (GWT-62.6 all-fields test; removed masking to confirm RED, then restored)",
+      "result": "243 passed, 0 failed; RED with masking removed (1 fail).",
+      "commit": "pending-head"
     }
   ],
   "coverage_by_gwt": {
@@ -86,7 +91,7 @@
     "GWT-62.3 service tokens (amended)": "PASS for documented forms: cfut_/cfat_/cfk_ (40+ chars, verified against docs), Fly fm2_ (documented), labelled Netlify. Negatives PASS: 39-char, legacy unprefixed Cloudflare, unlabelled Netlify, v1.0- release identifier. OPEN: Fly fo1_ kept though undocumented; operator decision.",
     "GWT-62.4 file:// no CSP": "PASS: 0 CSP violations; second clause probed: file:// page fetch to the Supabase origin returned HTTP 401 (reached server), no CSP refusal logged",
     "GWT-62.5 setup scripts": "PARTIAL: Supabase exit 0 (ready, no-op). Modal exit 0 in env -i, but the Modal tool env was not pristine (python-dotenv installed manually). Not a clean PASS until the operator accepts or reruns on a fresh tool env.",
-    "GWT-62.6 judge text": "PARTIAL: stored judge reason and raw response are tested (cli/test/judgePanel.test.js asserts no raw token in any inserted row). Error message, finding message, analysis, escalation and final reason are masked in code (judgePanel.js) but have no individual test."
+    "GWT-62.6 judge text": "PASS: judge reason, raw response, error message, finding message, analysis, escalation and final reason masked (judgePanel.js). cli/test/judgePanel.test.js asserts no raw token in any outbound prompt or stored row; the test fails when masking is removed."
   },
   "reviews": {
     "nw-software-crafter-reviewer": "Round 2 CHANGES REQUESTED. Addressed: JWT boundary (9c41d33, RED evidence), cfat/cfk and negatives. Open: test count 15 Python / 11 JS vs the 2x-GWT budget of 10 (consolidate or justify); no execution log for earlier RED batches.",

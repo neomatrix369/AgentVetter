@@ -455,3 +455,44 @@ test('slice 79: judge text is stored with secret-looking values masked', async (
     assert.ok(stored.includes('[REDACTED_TOKEN]'), 'masked placeholder must be stored');
   });
 });
+
+test('slice 79: every judge text field is masked in stored rows and outbound prompts', async () => {
+  /**
+   * Scenario: a token in the finding message, analysis, a judge error and a final reason never leaves unmasked.
+   * Slice: 79 — GWT-62.6 (judge text masking).
+   *
+   * Given a candidate and judge errors that all quote a GitHub-style token,
+   * When the panel runs and persists,
+   * Then no outbound prompt and no stored row contains the raw token.
+   */
+  await withSieEnv(async () => {
+    // -- Given --
+    const token = 'ghp_' + 'b'.repeat(36);
+    const candidate = {
+      ...CANDIDATE,
+      analysis: 'analysis quotes ' + token,
+      finding: { ...CANDIDATE.finding, message: 'message quotes ' + token },
+    };
+    const outbound = [];
+    const callChatApiFn = async (_base, _key, _model, systemPrompt, userContent) => {
+      outbound.push(userContent);
+      if (systemPrompt.includes('final security judge')) {
+        return answered('true_positive', 0.9, 'final quotes ' + token);
+      }
+      throw new Error('judge failed on ' + token);
+    };
+    const supabase = recordingSupabase();
+
+    // -- When --
+    const run = await runPanelForCandidate(candidate, {
+      listModelsFn: async () => ([{ id: 'gen-4b', kind: 'generate' }]),
+      callChatApiFn,
+    });
+    await persistPanelRun(supabase, run);
+
+    // -- Then --
+    assert.equal(outbound.some((text) => text.includes(token)), false, 'outbound prompts must be masked');
+    assert.equal(JSON.stringify(supabase.inserted).includes(token), false, 'stored rows must be masked');
+  });
+});
+
