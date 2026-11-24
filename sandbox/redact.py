@@ -20,33 +20,38 @@ _SECRET_WS = r"\t\n\v\f\r \x1c-\x1f\x85\u00a0\u1680\u2000-\u200a\u2028\u2029\u20
 _SECRET_VALUE = r"(?:\"[^\"]*\"|'[^']*'|[\"'][^\n]*|[^\"'&" + _SECRET_WS + r"]+)"
 _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     (
-        re.compile(r"Bearer[" + _SECRET_WS + r"]+[^" + _SECRET_WS + r"]+", re.IGNORECASE),
+        re.compile(
+            r"Bearer[" + _SECRET_WS + r"]+[^" + _SECRET_WS + r"]+", re.IGNORECASE | re.ASCII
+        ),
         "Bearer [REDACTED]",
     ),
     (
         re.compile(
-            r"\b(sk-|sk-ant-|ospy_|tsi_|dashscope)[A-Za-z0-9_-]{8,}\b", re.IGNORECASE | re.ASCII
+            r"(?<![A-Za-z0-9])(sk-|sk-ant-|ospy_|tsi_|dashscope)[A-Za-z0-9_-]{8,}\b",
+            re.IGNORECASE | re.ASCII,
         ),
         "[REDACTED_KEY]",
     ),
     (
         re.compile(
             r"api[_-]?key[\"']?[" + _SECRET_WS + r"]*[:=][" + _SECRET_WS + r"]*" + _SECRET_VALUE,
-            re.IGNORECASE,
+            re.IGNORECASE | re.ASCII,
         ),
         "api_key=[REDACTED]",
     ),
-    (re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b", re.ASCII), "[REDACTED_TOKEN]"),
-    (re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b", re.ASCII), "[REDACTED_TOKEN]"),
-    (re.compile(r"\bAKIA[0-9A-Z]{16}\b", re.ASCII), "[REDACTED_TOKEN]"),
+    (re.compile(r"(?<![A-Za-z0-9])gh[pousr]_[A-Za-z0-9]{20,}\b", re.ASCII), "[REDACTED_TOKEN]"),
+    (re.compile(r"(?<![A-Za-z0-9])github_pat_[A-Za-z0-9_]{20,}\b", re.ASCII), "[REDACTED_TOKEN]"),
+    (re.compile(r"(?<![A-Za-z0-9])AKIA[0-9A-Z]{16}\b", re.ASCII), "[REDACTED_TOKEN]"),
     (
-        re.compile(r"\b(sk|rk)[_-](live|test)[_-][A-Za-z0-9]{8,}\b", re.IGNORECASE | re.ASCII),
+        re.compile(
+            r"(?<![A-Za-z0-9])(sk|rk)[_-](live|test)[_-][A-Za-z0-9]{8,}\b", re.IGNORECASE | re.ASCII
+        ),
         "[REDACTED_KEY]",
     ),
     (
         re.compile(
             r"password[\"']?[" + _SECRET_WS + r"]*[:=][" + _SECRET_WS + r"]*" + _SECRET_VALUE,
-            re.IGNORECASE,
+            re.IGNORECASE | re.ASCII,
         ),
         "password=[REDACTED]",
     ),

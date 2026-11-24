@@ -309,6 +309,28 @@ def test_given_service_token_in_amended_format_when_redacted_then_token_is_maske
 
 
 @pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("tag X_ghp_" + "a" * 36 + " end", "tag X_[REDACTED_TOKEN] end"),
+        ("tag KEY_sk_live_" + "a" * 12 + " end", "tag KEY_[REDACTED_KEY] end"),
+        ("tag X_AKIA" + "A" * 16 + " end", "tag X_[REDACTED_TOKEN] end"),
+    ],
+    ids=["github-underscore-prefix", "stripe-style-underscore-prefix", "aws-underscore-prefix"],
+)
+def test_given_token_after_underscore_when_redacted_then_token_is_masked(
+    text: str, expected: str
+) -> None:
+    """Scenario: GitHub, live-key and AWS tokens attached to a word by an underscore are still masked.
+
+    Slice: 79 security hardening (GWT-62.3, underscore boundary).
+    @contract-shape:pure-function
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given / When / Then
+    assert redact.redact_secrets(text) == expected
+
+
+@pytest.mark.parametrize(
     "text",
     [
         "commit 3f786850e387550fdab836ed7e6dc881de23001b imports pkg.sub.module",
@@ -316,6 +338,8 @@ def test_given_service_token_in_amended_format_when_redacted_then_token_is_maske
         "token cfut_" + CF_BODY[:39] + " end",
         "token " + CF_BODY + " end",
         "token abcdefghijklmnop12345 end",
+        "apiKey=abcdefghijk",
+        "paſsword=hunter2value",
     ],
     ids=[
         "git-sha-and-dotted",
@@ -323,6 +347,8 @@ def test_given_service_token_in_amended_format_when_redacted_then_token_is_maske
         "cf-39-chars",
         "cf-legacy-unprefixed",
         "netlify-unlabelled",
+        "kelvin-lookalike-key-ascii-only",
+        "long-s-lookalike-password-ascii-only",
     ],
 )
 def test_given_shape_outside_the_rules_when_redacted_then_text_is_unchanged(text: str) -> None:

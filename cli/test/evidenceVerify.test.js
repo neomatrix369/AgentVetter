@@ -570,9 +570,33 @@ test('given shapes outside the rules when maskSecrets then the text is unchanged
     't cfut_' + body.slice(0, 39) + ' e',
     't ' + body + ' e',
     'token abcdefghijklmnop12345 end',
+    'apiKey=abcdefghijk',
+    'paſsword=hunter2value',
   ];
   for (const text of cases) {
     assert.equal(maskSecrets(text).text, text, text);
+  }
+});
+
+test('given tokens attached to a word by an underscore when maskSecrets then each token is masked', () => {
+  /**
+   * Scenario: GitHub, live-key and AWS tokens attached to a word by an underscore are still masked.
+   * Slice: 79 security hardening (GWT-62.3, underscore boundary).
+   * @contract-shape:pure-function
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given GitHub, live-key and AWS tokens preceded by an underscore,
+   * When maskSecrets runs,
+   * Then each token is replaced with its placeholder.
+   */
+  // -- Given / When / Then --
+  const cases = [
+    ['tag X_ghp_' + 'a'.repeat(36) + ' end', 'tag X_[REDACTED_TOKEN] end'],
+    ['tag KEY_sk_live_' + 'a'.repeat(12) + ' end', 'tag KEY_[REDACTED_KEY] end'],
+    ['tag X_AKIA' + 'A'.repeat(16) + ' end', 'tag X_[REDACTED_TOKEN] end'],
+  ];
+  for (const [input, expected] of cases) {
+    assert.equal(maskSecrets(input).text, expected, input);
   }
 });
 
