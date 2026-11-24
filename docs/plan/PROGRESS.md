@@ -241,8 +241,9 @@ Wave H product stubs live under `slices/08-H-frontline-agent-hooks/`. Governance
 | 59 | [slice-59-mvl-monk-deploy-proof](slices/15-O-monk-kit-live-packaging/slice-59-mvl-monk-deploy-proof.md) | Must | 📋 PLANNED | — | — | ~50 min [Walking Skeleton] |
 | 60 | [slice-60-tier2-tier3-coverage-honesty](slices/15-O-monk-kit-live-packaging/slice-60-tier2-tier3-coverage-honesty.md) | Should | 📋 PLANNED | — | — | ~25 min |
 | 61 | [slice-61-monk-docs-coexistence](slices/15-O-monk-kit-live-packaging/slice-61-monk-docs-coexistence.md) | Should | 📋 PLANNED | — | — | ~25 min |
+| 79 | [slice-79-security-hardening](slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md) | Must | 📋 PLANNED | — | — | ~25 min |
 
-**Group note:** ADR-0001 Proposed + PoC on `nooga/…/feat/monk-live-supabase-modal-kit`. **O0** = governance (Accept + open Qs); blocks VERIFIED/merge, not 58 prototyping. Capsules / Monk CI/CD / registry = Won't for O.
+**Group note:** ADR-0001 Proposed + PoC on `nooga/…/feat/monk-live-supabase-modal-kit`. **O0** = governance (Accept + open Qs); blocks VERIFIED/merge, not 58 prototyping. Capsules / Monk CI/CD / registry = Won't for O. Slice **79** = security hardening (Monk integration review — redact.py gaps).
 ### P — Git repo discover + fan-out
 | # | Slice | MoSCoW | Status | Started | Completed | Est. time |
 |---|-------|--------|--------|---------|-----------|-----------|

@@ -25,6 +25,78 @@
 - Authoring Capsules or CI/CD operator guides (link only as future)
 - Kit YAML / bootstrap implementation (58–60)
 
+## Added scope (2026-11-23 — docs integration plan, revised after reviewer rounds 1+2)
+
+### Three-file doc structure (from documentarist + architect reviews)
+Single JTBD per file. Do not collapse into one file.
+
+**File 1: `docs/explanation/monk-deployment-choices.md`** (new — Explanation)
+> JTBD: "Help me understand the options and choose"
+- P1 decision guide — Option A vs B comparison table (cost, infrastructure, automation, Monk's role)
+- Monk architecture explanation: what a Monk Kit is, what a runnable is, what BYOC means
+- Monk pricing: 5-day free trial → Free tier (1 cluster / 3 runnables) → Paid (~$29/mo)
+- Link to `monk-deploy.md` once decision is made
+
+**File 2: `docs/user-guide/monk-deploy.md`** (new — How-to)
+> JTBD: "Help me execute the deploy I've chosen"
+
+Sections (progressive disclosure — pre → deploy → link out to ops):
+
+**P2. Prerequisites checklist** (both options with step-by-step account setup)
+- Option A: Supabase ✓, Modal ✓, Cloudflare account + Pages CI config (Framework: None, build output: `prototypes/dc-dashboard`, env vars in Pages Settings)
+- Option B: all above + Hetzner account + API token + Monk install + auth + trial/pricing note
+
+**P3. Local-workflow verification gate** (`file://` dashboard loads, redact import, CLI smoke check)
+
+**Choose your path** (branching — reader skips the other path entirely):
+- → Option A: Cloudflare Pages deploy steps
+- → Option B: Hetzner via Monk deploy steps (with inline Tier 1 secrets list, `monk validate MANIFEST`, region selection, bootstrap status check)
+
+**Outcome statement** (required at top of each path):
+> "By the end of this path you'll have: a live [Cloudflare Pages / Hetzner HTTPS] dashboard serving Supabase data, with security headers configured."
+
+**A. What Monk does for AgentVetter** — hybrid model: Supabase provisioning, bootstrap container,
+agent plugin commands (`/monk show me what's running`, `/monk deploy the latest changes`)
+
+**B. Monk-readiness checklist** — what each Kit file does; contributor checklist
+(`MANIFEST`, `common.yaml`, `v1.0.0.yaml`, `latest.yaml`, `bootstrap/Dockerfile`)
+
+**C. Monk Kit deploy steps (Hetzner BYOC)** — `monk validate MANIFEST` → Hetzner region →
+Monk plugin → approve VM plan in local dashboard → enter Tier 1 secrets (all 4 listed inline)
+→ Monk provisions VM + bootstrap + nginx dashboard → `monk status bootstrap` = succeeded
+
+**D. Bootstrap failure recovery** — `monk logs agentvetter/bootstrap | tail -20`; fallback: manual
+schema apply via Supabase Console; fallback: `python3 scripts/setup-modal.sh`; re-deploy command
+
+**E. After-deploy commands** — full `/monk` command list including cost, scale, logs, deploy
+
+**F. Cloudflare Pages deploy steps (Option A)** — build settings, env vars placement in Pages UI,
+`_headers` file, CORS, `wrangler pages deployments list` to verify
+
+**G. Secrets quick reference table** — where to get all 7 secrets (Supabase, Modal, Snyk, Cloudflare,
+Hetzner, SUPABASE_ANON_KEY for Option A)
+
+**→ After deploy succeeds:** link to `docs/reference/monk-operations.md` for all ongoing ops
+
+**File 3: `docs/reference/monk-operations.md`** (new — Reference)
+> JTBD: "Help me find the command/procedure I need right now"
+- Q0. Observability — logs, `monk status`, smoke tests (HTTPS, CORS + positive + negative), browser DevTools check
+- Q1. Service lifecycle — pause/stop/restart individually and all at once (Monk CLI + natural language), Cloudflare disable/re-enable, service dependency order
+- Q2. Bring down everything and what persists (Option A and Option B)
+- Q3. Update dashboard after a code change (`git push` for A; `/monk deploy latest` for B)
+- Q4. Kit version upgrade path (schema migration steps, `v1.1.0`, MANIFEST pin, smoke test script)
+- Q5. Orphan cleanup — Supabase orphan, Modal orphan, Hetzner VM orphan recovery
+- Q6. Monk trial expiry procedure — delete before day 5 or upgrade to paid
+
+**Local-first rule (non-negotiable):** docs must describe cloud as additive bolt-on.
+Workstation Live path (`scripts/` + `.env`) remains primary until VERIFIED.
+
+### `QUICKSTART.md` hybrid deploy section
+Add a row to the top table pointing at both cloud deploy paths.
+Add `## Deploy (Cloud)` section: 2–3 sentences, link to `docs/explanation/monk-deployment-choices.md`
+to choose Option A or B, then follow the how-to.
+Reference Cloudflare Pages (not GitHub Pages) for the Live dashboard URL.
+
 ## Output contract
 > Observable shape of completion (shape only — not exact file paths).
 - **Baseline**: ADR-0001 exists; user-guide still workstation-centric

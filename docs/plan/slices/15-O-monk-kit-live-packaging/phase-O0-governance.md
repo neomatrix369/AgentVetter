@@ -15,6 +15,28 @@
 - **Global invariants**: → `docs/plan/invariants.md`
 > **Rule (mirrors H0):** O0 **blocks merge / VERIFIED claims**, **not Kit land prototyping**. Slice **58** may proceed on a branch while O0 is open. Slice **59** must not mark STATUS Monk MVL **VERIFIED** until O0’s ADR-0001 **Accepted** check is done. Slice **60** must not start UI for partial-coverage signalling until the signalling-surface DECISIONS row exists (can be recorded in O0).
 
+## Monk install prerequisites (added 2026-11-23)
+Before O0 governance work can proceed, the local Monk installation must be clean:
+
+1. **Uninstall Homebrew Monk** (v3.21.3):
+   ```bash
+   brew uninstall monk
+   rm -rf ~/.monk
+   ```
+   Verify: `which monk` returns nothing.
+
+2. **Install Monk as agent plugin** (not Homebrew):
+   ```bash
+   curl -fsSL https://get.monk.io/stable/plugin | sh
+   ```
+   Then authenticate in Claude Code: `/mcp` → choose monk → browser auth flow.
+
+3. **Install in IDE** (Claude Code and/or Cursor):
+   - Claude Code: `/plugin marketplace add monk-io/monk-plugin` → `/reload-plugins` → `/mcp`
+   - Cursor: `/add-plugin https://github.com/monk-io/monk-plugin` → restart → Settings → Tools & MCP → sign in
+
+> These are setup prerequisites — not automated gate evidence. Operator attests completion.
+
 ## Non-goals
 - Landing Kit YAML / bootstrap image (slice 58)
 - Running the MVL deploy (slice 59)

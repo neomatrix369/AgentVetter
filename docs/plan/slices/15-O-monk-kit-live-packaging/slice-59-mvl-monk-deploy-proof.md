@@ -29,6 +29,57 @@
 - Registry publication of the Kit
 - Replacing workstation Live as the default documented path before VERIFIED evidence exists
 
+## Added scope (2026-11-23 — Hetzner BYOC + security, revised after reviewer rounds 1+2)
+
+### Pre-conditions from slice 58 (must be done before this slice can pass)
+- `v1.0.0.yaml` has `depends_on` declarations (bootstrap-v1 → supabase-v1; dashboard-v1 → bootstrap-v1)
+- TLS cert provisioned in `bootstrap/Dockerfile` (Certbot/Let's Encrypt) OR Monk HTTPS proxy configured
+- `monk validate MANIFEST` passes before deploy attempt
+- Cloudflare Pages build settings documented: Framework=None, output=`prototypes/dc-dashboard`, no build command
+
+### Option A — Cloudflare Pages deploy proof (added to scope)
+In addition to the Hetzner BYOC proof (Option B), slice 59 must also prove Option A:
+- Cloudflare Pages URL is live and accessible (HTTPS enforced by default)
+- `_headers` file deployed and security headers visible (`curl -I <pages-url>`)
+- Supabase CORS allows the Pages URL; CORS + PostgREST probe returns 200
+- Negative CORS test: `Origin: attacker.example.com` returns 403
+- Browser DevTools check: dashboard SPA fetches Supabase data (not silent blank)
+- `wrangler pages deployments list` shows deployment as "Active"
+
+
+
+### Hetzner BYOC via Monk (primary deploy path)
+Cloud provider: **Hetzner** (cheapest Monk-supported BYOC option — real VMs, not edge workers).
+The Kit YAML already includes a dashboard runnable with HTTPS ingress via nginx.
+Monk provisions the Hetzner VM; nginx serves the Live dashboard with security headers.
+
+No new GHA workflow or `_headers` file needed — nginx config handles security headers.
+
+**nginx security headers (minimum, in nginx.conf for the dashboard runnable):**
+```nginx
+add_header Content-Security-Policy "default-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'";
+add_header X-Frame-Options "DENY";
+add_header X-Content-Type-Options "nosniff";
+add_header Referrer-Policy "strict-origin-when-cross-origin";
+add_header Permissions-Policy "geolocation=(), microphone=(), camera=()";
+add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
+```
+
+**CORS verification (Critical — from architect review + reviewer round 2):**
+Before declaring deploy successful:
+1. Supabase dashboard: Project → Settings → API → Allowed Origins: add Hetzner HTTPS URL (and Cloudflare Pages URL for Option A)
+2. Positive CORS test: `curl -s "https://<supabase>/rest/v1/items?select=id&limit=1" -H "apikey: <anon-key>" -H "Origin: https://<dashboard-url>"` → HTTP 200
+3. **Negative CORS test (new — required):** `curl ... -H "Origin: https://attacker.example.com"` → HTTP 403 (confirms origin enforcement is active, not just headers present)
+4. Browser DevTools check (manual — required, cannot be automated): open dashboard URL → Network tab → Supabase fetch returns 200 and data is visible in the dashboard UI. This catches silent SPA failures that curl header checks miss.
+5. Dashboard JS must show a user-visible diagnostic on CORS failure, not silently blank
+
+**Bootstrap status check (new — required before claiming deploy successful):**
+`monk status agentvetter/bootstrap` must show `succeeded` or `exited 0`.
+If `failed`: view error with `monk logs agentvetter/bootstrap | tail -20` and fix before proceeding.
+
+**Local-compat:** nginx config is Monk/Hetzner-only; `file://` local opens unaffected.
+CSP meta tag NOT added to source HTML (would break `file://` Supabase calls).
+
 ## Output contract
 > Observable shape of completion (shape only — not exact file paths).
 - **Baseline**: Kit present (58) but no dated VERIFIED Monk Live URL in STATUS
