@@ -474,10 +474,15 @@ test('slice 79: every judge text field is masked in stored rows and outbound pro
       finding: { ...CANDIDATE.finding, message: 'message quotes ' + token },
     };
     const outbound = [];
+    let answeredOnce = false;
     const callChatApiFn = async (_base, _key, _model, systemPrompt, userContent) => {
       outbound.push(userContent);
       if (systemPrompt.includes('final security judge')) {
         return answered('true_positive', 0.9, 'final quotes ' + token);
+      }
+      if (!answeredOnce) {
+        answeredOnce = true;
+        return answered('true_positive', 0.9, 'judge quotes ' + token);
       }
       throw new Error('judge failed on ' + token);
     };
