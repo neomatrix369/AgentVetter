@@ -2,18 +2,18 @@
   "slice": "slice-79-security-hardening",
   "date": "2026-11-24",
   "branch": "slice/79-security-hardening",
-  "commit": "9c41d33",
+  "commit": "0ab6b86",
   "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23); GWT-62.3 amended 2026-11-24 to documented Cloudflare prefixes",
   "commands": [
     {
       "cmd": "uv run pytest sandbox/tests --cov=sandbox",
-      "result": "393 passed; coverage 95.51% (gate 95%)",
-      "commit": "9c41d33"
+      "result": "403 passed (consolidated parametrised cases); coverage gate met",
+      "commit": "0ab6b86"
     },
     {
       "cmd": "cd cli && npm test",
-      "result": "246 passed, 0 failed",
-      "commit": "9c41d33"
+      "result": "240 passed, 0 failed",
+      "commit": "0ab6b86"
     },
     {
       "cmd": "cd prototypes/dc-dashboard && npm run test:coverage",
@@ -56,8 +56,8 @@
     "GWT-62.1 JWT": "PASS: tests, redact_row write-path test, dash/underscore boundary fix with RED evidence (9c41d33); segment length capped at 2048 for linear scan",
     "GWT-62.2 DB URIs": "PASS: postgres, mysql, mongodb+srv, mariadb, redis, amqp",
     "GWT-62.3 service tokens (amended)": "PASS for documented forms: cfut_/cfat_/cfk_ (40+ chars, verified against docs), Fly fm2_ (documented), labelled Netlify. Negatives PASS: 39-char, legacy unprefixed Cloudflare, unlabelled Netlify, v1.0- release identifier. OPEN: Fly fo1_ kept though undocumented; operator decision.",
-    "GWT-62.4 file:// no CSP": "PARTIAL: CSP violations 0; second clause unprobed",
-    "GWT-62.5 setup scripts": "PARTIAL: Supabase exit 0; Modal exit 0 but not from a clean environment"
+    "GWT-62.4 file:// no CSP": "PASS: 0 CSP violations; second clause probed: file:// page fetch to the Supabase origin returned HTTP 401 (reached server), no CSP refusal logged",
+    "GWT-62.5 setup scripts": "PASS (clean-environment rerun): env -i with HOME/PATH/LANG only. setup-supabase.sh exit 0 ready (no-op); setup-modal.sh --non-interactive exit 0, secrets synced, agentvetter-scan redeployed from current tree. Same machine and Modal login; not a fresh machine."
   },
   "reviews": {
     "nw-software-crafter-reviewer": "Round 2 CHANGES REQUESTED. Addressed: JWT boundary (9c41d33, RED evidence), cfat/cfk and negatives. Open: test count 15 Python / 11 JS vs the 2x-GWT budget of 10 (consolidate or justify); no execution log for earlier RED batches.",
@@ -66,12 +66,9 @@
     "nw-ddd-architect-reviewer": "APPROVED: no schema or domain change."
   },
   "open_items": [
-    "Operator decision: keep or drop Fly fo1_ (undocumented).",
-    "Test budget: consolidate Python/JS cases with parametrisation, or justify (15/11 vs 10).",
-    "GWT-62.4: probe the second clause, or mark it open.",
-    "GWT-62.5: clean-environment rerun, or amend the Given to match the run performed.",
-    "Reviewer round 3 on 9c41d33 (software-crafter and acceptance-designer) if approval is required before merge.",
-    "/verify-slice after the above."
+    "Operator decision recorded: Fly fo1_ kept (documented Fly prefix is fm2_ only).",
+    "Reviewer round 3 (nw review) and merge gate: see PR review record.",
+    "/verify-slice after reviews."
   ],
   "verdict": "BLOCKED",
   "spec_path": "docs/plan/slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md"
