@@ -26,6 +26,38 @@
 - Monk registry publish, Capsules, or Monk-generated CI/CD (ADR out-of-scope / later)
 - Changing the supported workstation Live path (`.env` + QUICKSTART)
 
+## Added scope (2026-11-23 — from Monk integration review + reviewer round 2)
+
+### Image tag pinning (from architect review — High severity)
+`MANIFEST` and `v1.0.0.yaml` currently reference `agentvetter-bootstrap:latest`.
+This floats at deploy time, breaking reproducibility.
+
+Changes:
+- `MANIFEST` image directive: `agentvetter-bootstrap:latest` → `agentvetter-bootstrap:v1.0.0`
+- `v1.0.0.yaml` bootstrap-v1 image reference: same pin
+- Document versioning contract in `docs/user-guide/monk-deploy.md` (slice 61)
+
+**Local-compat:** image tag pin only affects Monk/Docker deploy path; local scripts unaffected.
+
+### TLS cert provisioning — pre-condition for slice 59 HTTPS proof (from reviewer round 2)
+Monk delegates TLS to the nginx runnable — it does NOT auto-provision certs.
+Without this, slice 59 `GWT-59.4` ("HTTPS Live dashboard reads PostgREST") cannot pass.
+
+Changes:
+- `bootstrap/Dockerfile`: add Certbot step to provision Let's Encrypt cert on Hetzner VM
+  before nginx starts (domain = Hetzner VM public IP or hostname)
+- Alternative: add `monk.io/proxy: https` annotation to dashboard-v1 in `v1.0.0.yaml`
+  if Monk's built-in HTTPS proxy is available for BYOC — verify against Monk docs
+
+### Service dependency declarations — pre-condition for correct startup order (from reviewer round 2)
+Without `depends_on`, Monk may start services in parallel; dashboard will serve before schema is applied.
+
+Changes to `v1.0.0.yaml` group definition:
+- `bootstrap-v1` → add `depends: supabase-v1`
+- `dashboard-v1` → add `depends: bootstrap-v1`
+
+Verify with: `monk validate MANIFEST` (must pass before any deploy attempt).
+
 ## Output contract
 > Observable shape of completion (shape only — not exact file paths).
 - **Baseline**: `test ! -f MANIFEST && test ! -f v1.0.0.yaml` on `main` today (Kit absent)

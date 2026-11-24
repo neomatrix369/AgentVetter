@@ -373,6 +373,7 @@ Audit report: [`docs/plan/docs-gap-bridge-audit.md`](docs-gap-bridge-audit.md).
 | 59 | [slice-59-mvl-monk-deploy-proof](slices/15-O-monk-kit-live-packaging/slice-59-mvl-monk-deploy-proof.md) | MVL-Complete Monk Deploy Proof (Tier 1) | Must | 📋 | 58; O0 Accept before VERIFIED | — | ~5 min |
 | 60 | [slice-60-tier2-tier3-coverage-honesty](slices/15-O-monk-kit-live-packaging/slice-60-tier2-tier3-coverage-honesty.md) | Tier 2+3 Plumbing + Coverage Honesty | Should | 📋 | 59; signalling DECISIONS (O0 or Before-Check) | — | ~4 min |
 | 61 | [slice-61-monk-docs-coexistence](slices/15-O-monk-kit-live-packaging/slice-61-monk-docs-coexistence.md) | Monk Docs Coexistence + Operator Honesty | Should | 📋 | 58 (VERIFIED claims wait on 59) | — | ~3 min |
+| 79 | [slice-79-security-hardening](slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md) | Security Hardening from Monk Integration Review | Must | 📋 | 58 | — | ~25 min |
 ## Wave 16-P — Git repo discover + fan-out
 
 **Group letter P** (after N; **O** reserved for Monk Kit on `docs/monk-kit-wave-o`, slices 58–61). Folder: [`slices/16-P-git-repo-scan/`](slices/16-P-git-repo-scan/).
