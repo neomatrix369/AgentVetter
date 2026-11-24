@@ -33,10 +33,10 @@
 - Existing tests pass; no regression in CLI or sandbox behaviour
 
 ## Slice Workflow Bundle
-- Slice name: `slice-62-security-hardening`
+- Slice name: `slice-79-security-hardening`
 - Files: `sandbox/redact.py`
 - Exit criteria: new patterns added; local compat checklist passes; existing tests green
-- Commit pattern: `fix(slice-62): extend redact rules for JWT, DB URIs, non-prefix tokens`
+- Commit pattern: `fix(slice-79): extend redact rules for JWT, DB URIs, non-prefix tokens`
 
 ## Branch
 `slice/62-security-hardening`
@@ -68,7 +68,7 @@
 ### GWT-62.5 — Local scripts unaffected
 **Given** `scripts/setup-supabase.sh` and `scripts/setup-modal.sh` on a local machine
 **When** run in a clean environment
-**Then** both complete without errors introduced by slice 62 changes
+**Then** both complete without errors introduced by slice 79 changes
 
 ## Local compatibility checklist [GATE]
 - [ ] `python3 -c "import sandbox.redact"` exits 0
@@ -81,7 +81,7 @@
 - [ ] Slice 58 ✅ on `main` (sandbox/ exists)
 
 ## After-Checks [GATE]
-- [ ] `fix(slice-62): ...` commit on branch
+- [ ] `fix(slice-79): ...` commit on branch
 - [ ] All GWT-62.1–62.5 have test coverage or manual evidence
 - [ ] Local compatibility checklist above all ticked
 - [ ] No new patterns accidentally break existing redaction of AWS/GCP/GitHub tokens
