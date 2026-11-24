@@ -26,7 +26,7 @@
 - CSP meta tag in source HTML (intentionally NOT added — breaks `file://` local opens)
 
 ## Output contract
-- **Baseline**: `sandbox/redact.py` `_SECRET_RULES` has ~8 patterns; JWT/DB URI/non-prefix tokens not covered
+- **Baseline**: `sandbox/redact.py` `_SECRET_RULES` has ~8 patterns; JWT/DB URI/prefixed service tokens not covered
 - `_SECRET_RULES` extended with: JWT pattern, DB URI prefixes, non-prefix token patterns
 - `python3 -c "import sandbox.redact"` runs clean locally
 - `prototypes/dc-dashboard/AgentVetter.dc.html` opens via `file://` without CSP errors (no meta CSP added)
@@ -36,7 +36,7 @@
 - Slice name: `slice-79-security-hardening`
 - Files: `sandbox/redact.py`
 - Exit criteria: new patterns added; local compat checklist passes; existing tests green
-- Commit pattern: `fix(slice-79): extend redact rules for JWT, DB URIs, non-prefix tokens`
+- Commit pattern: `fix(slice-79): extend redact rules for JWT, DB URIs, prefixed service tokens`
 
 ## Branch
 `slice/79-security-hardening`
@@ -61,7 +61,7 @@
 **And** unlabelled Netlify tokens and legacy unprefixed Cloudflare tokens are **not** masked: neither has a distinguishing shape, and a bare 40-character pattern would hit git commit SHAs
 **And** a release identifier such as `v1.0-release-20241231` is left unchanged
 
-**Amendment note (2026-11-24):** the original wording used `v1.0-...` as the Cloudflare shape. Cloudflare's documented formats are `cfut_` (user), `cfat_` (account) and `cfk_` (global key) prefixes, and legacy tokens are unprefixed. `v1.0-` is not a Cloudflare format. Source: Cloudflare Fundamentals docs, Token formats (developers.cloudflare.com/fundamentals/api/get-started/token-formats/), as summarised in research supplied by the operator; not re-fetched in this session.
+**Amendment note (2026-11-24):** the original wording used `v1.0-...` as the Cloudflare shape, which is not a Cloudflare format. Re-fetched 2026-11-24 from developers.cloudflare.com/fundamentals/api/get-started/token-formats/: user `cfut_`, account `cfat_` and global key `cfk_`, each followed by 40 characters and a checksum (checksum length not stated); legacy tokens are unprefixed. Fly: re-fetched docs.fly.io/security/tokens: only `fm2_` is documented (as `FlyV1 fm2_...`); `fo1_`, `fm1a_` and `fm1r_` are not documented. The `fo1_` alternative in the rule is kept as an unverified legacy-coverage choice pending operator decision.
 
 ### GWT-62.4 — Local `file://` dashboard unaffected
 **Given** `prototypes/dc-dashboard/AgentVetter.dc.html` opened via `file://` protocol
