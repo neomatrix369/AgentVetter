@@ -15,8 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   details are stored. Previously they were masked only when printed by the CLI.
   Existing rows are not backfilled.
 - Masking also covers JWTs, database connection strings (postgres, mysql, mariadb,
-  mongodb, redis, amqp), Cloudflare tokens with the cfut_, cfat_ or cfk_ prefix, Fly.io
-  tokens, and Netlify tokens written after a NETLIFY_AUTH_TOKEN-style label, in both the
+  mongodb, redis, amqp), Cloudflare tokens with the `cfut_`, `cfat_` or `cfk_` prefix, Fly.io
+  tokens, and Netlify tokens written after a `NETLIFY_AUTH_TOKEN`-style label, in both the
   sandbox and the CLI. Unlabelled Netlify tokens and legacy unprefixed Cloudflare tokens
   are not masked.
 
