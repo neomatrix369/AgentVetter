@@ -91,8 +91,8 @@
     }
   ],
   "coverage_by_gwt": {
-    "GWT-62.1 JWT": "PASS: tests, redact_row write-path test, dash/underscore boundary fix with RED evidence (9c41d33); segment length capped at 2048 for linear scan",
-    "GWT-62.2 DB URIs": "PASS: postgres, mysql, mongodb+srv, mariadb, redis, amqp",
+    "GWT-62.1 JWT": "PASS: tests, redact_row write-path test, dash/underscore boundary fix with RED evidence (9c41d33); segment length capped at 2048 for linear scan; glued JWT (xeyJ...) masked (c127b5b tests in both suites)",
+    "GWT-62.2 DB URIs": "PASS: postgres, mysql, mongodb+srv, mariadb, redis, amqp; glued (dbxpostgres://...) and driver-suffix (postgresql+psycopg2://...) covered in both suites",
     "GWT-62.3 service tokens (amended)": "PASS for documented forms: cfut_/cfat_/cfk_ (40+ chars, verified against docs), Fly fm2_ (documented), labelled Netlify. Negatives PASS: 39-char, legacy unprefixed Cloudflare, unlabelled Netlify, v1.0- release identifier. OPEN: Fly fo1_ kept though undocumented; operator decision.",
     "GWT-62.4 file:// no CSP": "PASS: 0 CSP violations; second clause probed: file:// page fetch to the Supabase origin returned HTTP 401 (reached server), no CSP refusal logged",
     "GWT-62.5 setup scripts": "PARTIAL: Supabase exit 0 (ready, no-op). Modal exit 0 in env -i, but the Modal tool env was not pristine (python-dotenv installed manually). Not a clean PASS until the operator accepts or reruns on a fresh tool env.",
