@@ -669,3 +669,20 @@ test('given an adversarial JWT-like run when maskSecrets then it finishes quickl
   maskSecrets(text);
   assert.ok(performance.now() - started < 2000, 'redaction must stay linear');
 });
+
+test('given a JWT after a dash or underscore when maskSecrets then the token is masked', () => {
+  /**
+   * Scenario: a JWT preceded by a dash or underscore is still masked, matching the sandbox.
+   * Slice: 79 security hardening (GWT-62.1, review follow-up).
+   * @contract-shape:bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a JWT preceded by a dash and another preceded by an underscore,
+   * When maskSecrets runs,
+   * Then both tokens are replaced.
+   */
+  // -- Given / When / Then --
+  const jwt = 'eyJ' + 'hbGciOiJIUzI1NiJ9' + '.' + 'eyJzdWIiOiIxMjMifQ' + '.' + 'c2lnbmF0dXJlMTIz';
+  assert.equal(maskSecrets('x-auth-' + jwt).text, 'x-auth-[REDACTED]');
+  assert.equal(maskSecrets('jwt_' + jwt).text, 'jwt_[REDACTED]');
+});

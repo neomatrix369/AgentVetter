@@ -52,7 +52,7 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     ),
     (
         re.compile(
-            r"(?<![A-Za-z0-9_-])eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}",
+            r"(?<![A-Za-z0-9])eyJ[A-Za-z0-9_-]{5,2048}\.[A-Za-z0-9_-]{5,2048}\.[A-Za-z0-9_-]{5,2048}",
             re.ASCII,
         ),
         "[REDACTED]",

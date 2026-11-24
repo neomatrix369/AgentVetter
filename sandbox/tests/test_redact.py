@@ -472,3 +472,18 @@ def test_given_adversarial_jwt_like_run_when_redacted_then_it_finishes_quickly()
 
     ### Then
     assert elapsed < 2.0, f"redaction took {elapsed:.2f}s"
+
+
+def test_given_jwt_after_dash_or_underscore_when_redacted_then_token_is_masked() -> None:
+    """Scenario: a JWT preceded by a dash or underscore is still masked.
+
+    Slice: 79 security hardening (GWT-62.1, review follow-up).
+    @contract-shape:bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    jwt = "eyJ" + "hbGciOiJIUzI1NiJ9" + "." + "eyJzdWIiOiIxMjMifQ" + "." + "c2lnbmF0dXJlMTIz"
+
+    ### When / Then
+    assert redact.redact_secrets("x-auth-" + jwt) == "x-auth-[REDACTED]"
+    assert redact.redact_secrets("jwt_" + jwt) == "jwt_[REDACTED]"
