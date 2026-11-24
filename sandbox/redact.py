@@ -50,6 +50,23 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
         ),
         "password=[REDACTED]",
     ),
+    (
+        re.compile(r"\beyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}", re.ASCII),
+        "[REDACTED]",
+    ),
+    (
+        re.compile(
+            r"\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|rediss?|amqps?)://[^\s'\"<>]+",
+            re.IGNORECASE | re.ASCII,
+        ),
+        "[REDACTED]",
+    ),
+    (
+        re.compile(
+            r"\b(?:FlyV1\s+)?(?:fo1|fm2)_[A-Za-z0-9_-]{16,}\b|\bv1\.0-[A-Za-z0-9]{16,}\b", re.ASCII
+        ),
+        "[REDACTED]",
+    ),
 )
 
 

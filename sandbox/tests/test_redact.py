@@ -210,3 +210,76 @@ def test_given_control_and_zero_width_separators_when_redacted_then_bearer_token
     assert redact.redact_secrets("Bearer\x85tok") == "Bearer [REDACTED]"
     assert redact.redact_secrets("Bearer\x1ftok") == "Bearer [REDACTED]"
     assert redact.redact_secrets("Bearer\u200btok") == "Bearer [REDACTED]"
+
+
+FAKE_JWT = "eyJ" + "hbGciOiJIUzI1NiJ9" + "." + "eyJzdWIiOiIxMjMifQ" + "." + "c2lnbmF0dXJlMTIz"
+
+
+def test_given_jwt_in_snippet_when_redacted_then_token_is_masked() -> None:
+    """Scenario: a JSON Web Token in scanned output is masked before it is stored.
+
+    Slice: 79 security hardening (GWT-62.1).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    text = "auth=" + FAKE_JWT + " end"
+
+    ### When
+    out = redact.redact_secrets(text)
+
+    ### Then
+    assert FAKE_JWT not in out
+    assert out == "auth=[REDACTED] end"
+
+
+def test_given_database_connection_uris_when_redacted_then_whole_uri_is_masked() -> None:
+    """Scenario: connection strings with embedded credentials are masked in full.
+
+    Slice: 79 security hardening (GWT-62.2).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    cases = [
+        "postgresql://" + "app:hunter" + "2@db.internal:5432/app",
+        "mongodb+srv://" + "svc:pw" + "@cluster0.example.net/prod",
+        "mysql://" + "root:r00t" + "@127.0.0.1/shop",
+    ]
+
+    ### When / Then
+    for uri in cases:
+        assert redact.redact_secrets(f"dsn={uri} end") == "dsn=[REDACTED] end", uri
+
+
+def test_given_non_prefix_service_tokens_when_redacted_then_each_token_is_masked() -> None:
+    """Scenario: Cloudflare and Fly.io tokens in scanned output are masked.
+
+    Slice: 79 security hardening (GWT-62.3).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    cases = [
+        "v1.0-" + "abcdef0123456789abcdef0123456789",
+        "FlyV1 " + "fm2_" + "AbCdEf0123456789XyZ",
+        "fo1_" + "AbCdEf0123456789XyZ0123",
+    ]
+
+    ### When / Then
+    for token in cases:
+        assert redact.redact_secrets(f"token {token} end") == "token [REDACTED] end", token
+
+
+def test_given_commit_sha_and_dotted_identifiers_when_redacted_then_text_is_unchanged() -> None:
+    """Scenario: new rules do not mask a git SHA or a dotted module path.
+
+    Slice: 79 security hardening (regression guard for GWT-62.3).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    text = "commit 3f786850e387550fdab836ed7e6dc881de23001b imports pkg.sub.module"
+
+    ### When / Then
+    assert redact.redact_secrets(text) == text

@@ -34,6 +34,9 @@ const SECRET_RULES = [
   { re: /\bAKIA[0-9A-Z]{16}\b/g, to: '[REDACTED_TOKEN]' },
   { re: /\b(sk|rk)[_-](live|test)[_-][A-Za-z0-9]{8,}\b/gi, to: '[REDACTED_KEY]' },
   { re: new RegExp(String.raw`password["']?[${SECRET_WS}]*[:=][${SECRET_WS}]*${SECRET_VALUE}`, 'gi'), to: 'password=[REDACTED]' },
+  { re: /\beyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}/g, to: '[REDACTED]' },
+  { re: /\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|rediss?|amqps?):\/\/[^\s'"<>]+/gi, to: '[REDACTED]' },
+  { re: /\b(?:FlyV1\s+)?(?:fo1|fm2)_[A-Za-z0-9_-]{16,}\b|\bv1\.0-[A-Za-z0-9]{16,}\b/g, to: '[REDACTED]' },
 ];
 
 function isInsideRoot(root, candidate) {

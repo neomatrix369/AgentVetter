@@ -470,3 +470,48 @@ test('given control and zero-width separators when maskSecrets then Bearer token
   assert.equal(maskSecrets('Bearer\u001ftok').text, 'Bearer [REDACTED]');
   assert.equal(maskSecrets('Bearer\u200btok').text, 'Bearer [REDACTED]');
 });
+
+test('given a JWT, database URIs and non-prefix service tokens when maskSecrets then each is masked', () => {
+  /**
+   * Scenario: JWTs, connection strings and Cloudflare/Fly tokens are masked, mirroring the sandbox.
+   * Slice: 79 security hardening (GWT-62.1\u201362.3).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given one credential of each new shape inside plain text,
+   * When maskSecrets runs,
+   * Then each credential becomes the placeholder and the surrounding text is kept.
+   */
+  // -- Given --
+  const jwt = 'eyJ' + 'hbGciOiJIUzI1NiJ9' + '.' + 'eyJzdWIiOiIxMjMifQ' + '.' + 'c2lnbmF0dXJlMTIz';
+  const cases = [
+    [jwt, '[REDACTED]'],
+    ['postgresql://' + 'app:hunter' + '2@db.internal:5432/app', '[REDACTED]'],
+    ['mongodb+srv://' + 'svc:pw' + '@cluster0.example.net/prod', '[REDACTED]'],
+    ['v1.0-' + 'abcdef0123456789abcdef0123456789', '[REDACTED]'],
+    ['FlyV1 ' + 'fm2_' + 'AbCdEf0123456789XyZ', '[REDACTED]'],
+  ];
+
+  // -- When / Then --
+  for (const [raw, placeholder] of cases) {
+    assert.equal(maskSecrets(`x ${raw} y`).text, `x ${placeholder} y`, raw);
+  }
+});
+
+test('given a git SHA and a dotted module path when maskSecrets then the text is unchanged', () => {
+  /**
+   * Scenario: new rules do not mask a commit SHA or a dotted identifier.
+   * Slice: 79 security hardening (regression guard for GWT-62.3).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a commit SHA and a dotted module path,
+   * When maskSecrets runs,
+   * Then the output equals the input.
+   */
+  // -- Given --
+  const text = 'commit 3f786850e387550fdab836ed7e6dc881de23001b imports pkg.sub.module';
+
+  // -- When / Then --
+  assert.equal(maskSecrets(text).text, text);
+});
