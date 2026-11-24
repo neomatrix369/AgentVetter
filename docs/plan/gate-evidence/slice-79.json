@@ -45,7 +45,7 @@
     "GWT-62.2 DB URIs": "PASS (same tests and wiring)",
     "GWT-62.3 service tokens": "PARTIAL: Cloudflare v1.0- and Fly fo1_/fm2_ PASS. Netlify covered only when labelled (NETLIFY_AUTH_TOKEN=...) in d481e02; unlabelled Netlify tokens are not masked by design (avoids git SHA false positives).",
     "GWT-62.4 file:// no CSP": "PARTIAL: CSP violations 0 in DevTools check; static check (no CSP meta) passes.",
-    "GWT-62.5 setup scripts": "PARTIAL: syntax and --help pass. ./scripts/setup-supabase.sh (no --force) run against the cloud project: exit 0, output {\"status\":\"ready\"} (idempotent no-op). setup-modal.sh NOT run: it overwrites Modal secrets and redeploys scan_app.py, which the operator declined for this check."
+    "GWT-62.5 setup scripts": "PARTIAL: syntax and --help pass. ./scripts/setup-supabase.sh (no --force) run against the cloud project: exit 0, output {\"status\":\"ready\"} (idempotent no-op). ./scripts/setup-modal.sh --non-interactive (operator approved): first attempt failed because python-dotenv was missing from the Modal CLI tool env (no changes made); installed python-dotenv into that env only; rerun exit 0. Synced agentvetter-supabase and agentvetter-scan-secrets, deployed agentvetter-scan (scan_app.py) from the working tree. Deployed code includes the commit after 3f4b48e."
   },
   "open_items": [
     "GWT-62.5 live dry-run of scripts/setup-supabase.sh and scripts/setup-modal.sh (operator, with credentials).",

@@ -261,7 +261,7 @@ def test_given_non_prefix_service_tokens_when_redacted_then_each_token_is_masked
     """
     ### Given
     cases = [
-        "v1.0-" + "abcdef0123456789abcdef0123456789",
+        "cfut_" + "a1B2c3D4e5F6g7H8i9J0" * 2 + "k1l2m3",
         "FlyV1 " + "fm2_" + "AbCdEf0123456789XyZ",
         "fo1_" + "AbCdEf0123456789XyZ0123",
     ]
@@ -338,3 +338,17 @@ def test_given_non_breaking_space_in_uri_and_fly_token_when_redacted_then_only_t
 
     ### When / Then
     assert redact.redact_secrets(text) == "dsn=[REDACTED]\u00a0end [REDACTED]"
+
+
+def test_given_versioned_release_identifier_when_redacted_then_text_is_unchanged() -> None:
+    """Scenario: a v1.0- release identifier is not mistaken for a Cloudflare token.
+
+    Slice: 79 security hardening (review follow-up, GWT-62.3).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    text = "release v1.0-release-20241231 shipped"
+
+    ### When / Then
+    assert redact.redact_secrets(text) == text

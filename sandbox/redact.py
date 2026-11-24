@@ -67,7 +67,7 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
         re.compile(
             r"\b(?:FlyV1["
             + _SECRET_WS
-            + r"]+)?(?:fo1|fm2)_[A-Za-z0-9_-]{16,}\b|\bv1\.0-[A-Za-z0-9]{16,}\b",
+            + r"]+)?(?:fo1|fm2)_[A-Za-z0-9_-]{16,}\b|\bcf(?:ut|at|k)_[A-Za-z0-9]{40,}\b",
             re.ASCII,
         ),
         "[REDACTED]",

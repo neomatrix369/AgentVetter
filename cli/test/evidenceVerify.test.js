@@ -488,7 +488,7 @@ test('given a JWT, database URIs and non-prefix service tokens when maskSecrets 
     [jwt, '[REDACTED]'],
     ['postgresql://' + 'app:hunter' + '2@db.internal:5432/app', '[REDACTED]'],
     ['mongodb+srv://' + 'svc:pw' + '@cluster0.example.net/prod', '[REDACTED]'],
-    ['v1.0-' + 'abcdef0123456789abcdef0123456789', '[REDACTED]'],
+    ['cfut_' + 'a1B2c3D4e5F6g7H8i9J0' + 'a1B2c3D4e5F6g7H8i9J0' + 'k1l2m3', '[REDACTED]'],
     ['FlyV1 ' + 'fm2_' + 'AbCdEf0123456789XyZ', '[REDACTED]'],
   ];
 
@@ -564,4 +564,20 @@ test('given non-breaking spaces in a URI and a Fly token when maskSecrets then o
   // -- Given / When / Then --
   const text = 'dsn=postgresql://app:pw@h/x\u00a0end FlyV1\u00a0fm2_AbCdEf0123456789XyZ';
   assert.equal(maskSecrets(text).text, 'dsn=[REDACTED]\u00a0end [REDACTED]');
+});
+
+test('given a v1.0 release identifier when maskSecrets then the text is unchanged', () => {
+  /**
+   * Scenario: a v1.0- release identifier is not mistaken for a Cloudflare token.
+   * Slice: 79 security hardening (review follow-up, GWT-62.3).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a release identifier that starts with v1.0-,
+   * When maskSecrets runs,
+   * Then the text is unchanged.
+   */
+  // -- Given / When / Then --
+  const text = 'release v1.0-release-20241231 shipped';
+  assert.equal(maskSecrets(text).text, text);
 });
