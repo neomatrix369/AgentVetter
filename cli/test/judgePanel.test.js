@@ -495,4 +495,3 @@ test('slice 79: every judge text field is masked in stored rows and outbound pro
     assert.equal(JSON.stringify(supabase.inserted).includes(token), false, 'stored rows must be masked');
   });
 });
-
