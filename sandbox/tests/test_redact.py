@@ -283,3 +283,24 @@ def test_given_commit_sha_and_dotted_identifiers_when_redacted_then_text_is_unch
 
     ### When / Then
     assert redact.redact_secrets(text) == text
+
+
+FAKE_NETLIFY = "abcdefghijklmnop" + "12345"
+
+
+def test_given_labelled_netlify_token_when_redacted_then_value_is_masked() -> None:
+    """Scenario: a Netlify token next to its label is masked; the label is kept.
+
+    Slice: 79 security hardening (GWT-62.3, Netlify).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    text = "deploy NETLIFY_AUTH_TOKEN=" + FAKE_NETLIFY + " end"
+
+    ### When
+    out = redact.redact_secrets(text)
+
+    ### Then
+    assert FAKE_NETLIFY not in out
+    assert out == "deploy netlify_token=[REDACTED] end"

@@ -67,6 +67,18 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
         ),
         "[REDACTED]",
     ),
+    (
+        re.compile(
+            r"\bnetlify[_-]?(?:auth[_-]?)?token[\"']?["
+            + _SECRET_WS
+            + r"]*[:=]["
+            + _SECRET_WS
+            + r"]*"
+            + _SECRET_VALUE,
+            re.IGNORECASE,
+        ),
+        "netlify_token=[REDACTED]",
+    ),
 )
 
 

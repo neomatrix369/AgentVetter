@@ -37,6 +37,7 @@ const SECRET_RULES = [
   { re: /\beyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}/g, to: '[REDACTED]' },
   { re: /\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|rediss?|amqps?):\/\/[^\s'"<>]+/gi, to: '[REDACTED]' },
   { re: /\b(?:FlyV1\s+)?(?:fo1|fm2)_[A-Za-z0-9_-]{16,}\b|\bv1\.0-[A-Za-z0-9]{16,}\b/g, to: '[REDACTED]' },
+  { re: new RegExp(String.raw`\bnetlify[_-]?(?:auth[_-]?)?token["']?[${SECRET_WS}]*[:=][${SECRET_WS}]*${SECRET_VALUE}`, 'gi'), to: 'netlify_token=[REDACTED]' },
 ];
 
 function isInsideRoot(root, candidate) {

@@ -515,3 +515,21 @@ test('given a git SHA and a dotted module path when maskSecrets then the text is
   // -- When / Then --
   assert.equal(maskSecrets(text).text, text);
 });
+
+test('given a labelled Netlify token when maskSecrets then the value is masked and the label kept', () => {
+  /**
+   * Scenario: a Netlify token next to its label is masked, mirroring the sandbox.
+   * Slice: 79 security hardening (GWT-62.3, Netlify).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a Netlify token written after its NETLIFY_AUTH_TOKEN label,
+   * When maskSecrets runs,
+   * Then the value is replaced and the label is kept.
+   */
+  // -- Given / When / Then --
+  const value = 'abcdefghijklmnop' + '12345';
+  const out = maskSecrets(`deploy NETLIFY_AUTH_TOKEN=${value} end`).text;
+  assert.ok(!out.includes(value), 'raw Netlify token must not appear');
+  assert.equal(out, 'deploy netlify_token=[REDACTED] end');
+});
