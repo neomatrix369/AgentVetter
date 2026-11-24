@@ -2,7 +2,7 @@
   "slice": "slice-79-security-hardening",
   "date": "2026-11-24",
   "branch": "slice/79-security-hardening",
-  "commit": "bf691d4",
+  "commit": "c002d2f",
   "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23); GWT-62.3 amended 2026-11-24 to documented Cloudflare prefixes",
   "commands": [
     {
@@ -57,7 +57,12 @@
     },
     {
       "cmd": "JWT rule timing at 1 MB (adversarial)",
-      "result": "Python: 0.91 s dash-run, 0.07 s dotted. JS: 2.70 s dash-run, 0.01 s dotted. Bounded (segments capped at 2048), not linear. Residual: a 1 MB dash-run costs seconds. Operator decision: lower the cap (misses long JWT segments) or accept."
+      "result": "Linear in input length on a 1 MB-class adversarial dash-run, with segments capped at 2048. Measured Python: 100k chars 0.026 s, 200k chars 0.051 s. JS: 1 MB 2.70 s (earlier run). Operator accepted the cost (DECISIONS 2026-11-24)."
+    },
+    {
+      "cmd": "uv run pytest sandbox/tests; cd cli && npm test (after underscore-boundary and ASCII-parity fix)",
+      "result": "412 passed (sandbox); 241 passed, 0 failed (CLI). Ruff check and format clean on changed Python files.",
+      "commit": "c002d2f"
     }
   ],
   "coverage_by_gwt": {
@@ -69,7 +74,7 @@
   },
   "reviews": {
     "nw-software-crafter-reviewer": "Round 2 CHANGES REQUESTED. Addressed: JWT boundary (9c41d33, RED evidence), cfat/cfk and negatives. Open: test count 15 Python / 11 JS vs the 2x-GWT budget of 10 (consolidate or justify); no execution log for earlier RED batches.",
-    "nw-acceptance-designer-reviewer": "Round 2 CHANGES REQUESTED. Addressed: @contract-shape:bounded-change tags, stale scenario names renamed, spec provenance recorded. Open by design: GWT-62.4 second clause, GWT-62.5 clean environment.",
+    "nw-acceptance-designer-reviewer": "Round 2 CHANGES REQUESTED. Addressed: contract-shape tags are @contract-shape:pure-function (operator form, DECISIONS 2026-11-24); stale scenario names renamed; spec provenance recorded. Open by design: GWT-62.4 second clause, GWT-62.5 clean environment.",
     "nw-solution-architect-reviewer": "APPROVED with non-blocking notes (parity by convention only; llm-usage-tracking.md third redaction design; gitleaks allowlist breadth).",
     "nw-ddd-architect-reviewer": "APPROVED: no schema or domain change."
   },

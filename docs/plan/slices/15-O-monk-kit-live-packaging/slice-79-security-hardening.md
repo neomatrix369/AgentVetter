@@ -88,7 +88,7 @@
 - [ ] `fix(slice-79): ...` commit on branch
 - [ ] All GWT-62.1–62.5 have test coverage or manual evidence
 - [ ] Local compatibility checklist above all ticked
-- [ ] No new patterns accidentally break existing redaction of AWS/GCP/GitHub tokens
+- [ ] No new patterns accidentally break existing redaction of AWS and GitHub tokens (no GCP rule exists, so there is no GCP baseline to regress)
 
 ### Closing Gates
 - [ ] `nw-gate-evidence-validator` passes for `docs/plan/gate-evidence/slice-79.json` (currently `verdict: BLOCKED`)
