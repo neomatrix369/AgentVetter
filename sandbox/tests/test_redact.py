@@ -8,6 +8,7 @@ The fake credentials are split across string literals so gitleaks does not
 flag this file. The redacted text still contains the joined value at runtime.
 """
 
+import pytest
 import redact
 
 FAKE_KEY = "sk-" + "live-4f2b9abcdef"
@@ -212,225 +213,135 @@ def test_given_control_and_zero_width_separators_when_redacted_then_bearer_token
     assert redact.redact_secrets("Bearer\u200btok") == "Bearer [REDACTED]"
 
 
-FAKE_JWT = "eyJ" + "hbGciOiJIUzI1NiJ9" + "." + "eyJzdWIiOiIxMjMifQ" + "." + "c2lnbmF0dXJlMTIz"
+JWT = "eyJ" + "hbGciOiJIUzI1NiJ9" + "." + "eyJzdWIiOiIxMjMifQ" + "." + "c2lnbmF0dXJlMTIz"
+CF_BODY = "a1B2c3D4e5F6g7H8i9J0" * 2
+FAKE_NETLIFY = "abcdefghijklmnop" + "12345"
 
 
-def test_given_jwt_in_snippet_when_redacted_then_token_is_masked() -> None:
-    """Scenario: a JSON Web Token in scanned output is masked before it is stored.
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (JWT, "[REDACTED]"),
+        ("auth=" + JWT + " end", "auth=[REDACTED] end"),
+        ("x-auth-" + JWT, "x-auth-[REDACTED]"),
+        ("jwt_" + JWT, "jwt_[REDACTED]"),
+    ],
+    ids=["plain", "after-equals", "after-dash", "after-underscore"],
+)
+def test_given_jwt_in_any_position_when_redacted_then_token_is_masked(
+    text: str, expected: str
+) -> None:
+    """Scenario: a JWT is masked wherever it appears in scanned text.
 
     Slice: 79 security hardening (GWT-62.1).
     @contract-shape:bounded-change
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
-    ### Given
-    text = "auth=" + FAKE_JWT + " end"
-
-    ### When
-    out = redact.redact_secrets(text)
-
-    ### Then
-    assert FAKE_JWT not in out
-    assert out == "auth=[REDACTED] end"
+    ### Given / When / Then
+    assert redact.redact_secrets(text) == expected
 
 
-def test_given_database_connection_uris_when_redacted_then_whole_uri_is_masked() -> None:
+@pytest.mark.parametrize(
+    "scheme_and_creds",
+    [
+        "postgresql://" + "app:hunter" + "2@db.internal:5432/app",
+        "postgres://" + "app:pw" + "@db/x",
+        "mysql://" + "root:r00t" + "@127.0.0.1/shop",
+        "mariadb://" + "u:p" + "@db/x",
+        "mongodb+srv://" + "svc:pw" + "@cluster0.example.net/prod",
+        "redis://" + ":pw" + "@cache:6379/0",
+        "amqp://" + "guest:g" + "@broker/vhost",
+    ],
+)
+def test_given_connection_uri_when_redacted_then_whole_uri_is_masked(scheme_and_creds: str) -> None:
     """Scenario: connection strings with embedded credentials are masked in full.
 
     Slice: 79 security hardening (GWT-62.2).
     @contract-shape:bounded-change
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
-    ### Given
-    cases = [
-        "postgresql://" + "app:hunter" + "2@db.internal:5432/app",
-        "mongodb+srv://" + "svc:pw" + "@cluster0.example.net/prod",
-        "mysql://" + "root:r00t" + "@127.0.0.1/shop",
-    ]
-
-    ### When / Then
-    for uri in cases:
-        assert redact.redact_secrets(f"dsn={uri} end") == "dsn=[REDACTED] end", uri
+    ### Given / When / Then
+    assert redact.redact_secrets(f"dsn={scheme_and_creds} end") == "dsn=[REDACTED] end"
 
 
-def test_given_documented_prefixed_service_tokens_when_redacted_then_each_token_is_masked() -> None:
-    """Scenario: Cloudflare and Fly.io tokens in scanned output are masked.
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("token cfut_" + CF_BODY + "k1l2m3 end", "token [REDACTED] end"),
+        ("token cfat_" + CF_BODY + "k1l2m3 end", "token [REDACTED] end"),
+        ("token cfk_" + CF_BODY + "k1l2m3 end", "token [REDACTED] end"),
+        ("token FlyV1 fm2_AbCdEf0123456789XyZ end", "token [REDACTED] end"),
+        ("token fo1_AbCdEf0123456789XyZ0123 end", "token [REDACTED] end"),
+        (
+            "deploy NETLIFY_AUTH_TOKEN=" + FAKE_NETLIFY + " end",
+            "deploy netlify_token=[REDACTED] end",
+        ),
+    ],
+    ids=["cf-user", "cf-account", "cf-global", "fly-fm2", "fly-fo1", "netlify-labelled"],
+)
+def test_given_documented_service_token_when_redacted_then_token_is_masked(
+    text: str, expected: str
+) -> None:
+    """Scenario: documented prefixed service tokens are masked; a labelled Netlify value keeps only its label name.
 
-    Slice: 79 security hardening (GWT-62.3).
+    Slice: 79 security hardening (GWT-62.3, amended).
     @contract-shape:bounded-change
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
-    ### Given
-    cases = [
-        "cfut_" + "a1B2c3D4e5F6g7H8i9J0" * 2 + "k1l2m3",
-        "FlyV1 " + "fm2_" + "AbCdEf0123456789XyZ",
-        "fo1_" + "AbCdEf0123456789XyZ0123",
-    ]
-
-    ### When / Then
-    for token in cases:
-        assert redact.redact_secrets(f"token {token} end") == "token [REDACTED] end", token
+    ### Given / When / Then
+    assert redact.redact_secrets(text) == expected
 
 
-def test_given_commit_sha_and_dotted_identifiers_when_redacted_then_text_is_unchanged() -> None:
-    """Scenario: new rules do not mask a git SHA or a dotted module path.
+@pytest.mark.parametrize(
+    "text",
+    [
+        "commit 3f786850e387550fdab836ed7e6dc881de23001b imports pkg.sub.module",
+        "release v1.0-release-20241231 shipped",
+        "token cfut_" + CF_BODY[:39] + " end",
+        "token " + CF_BODY + " end",
+        "token abcdefghijklmnop12345 end",
+    ],
+    ids=[
+        "git-sha-and-dotted",
+        "v1-release",
+        "cf-39-chars",
+        "cf-legacy-unprefixed",
+        "netlify-unlabelled",
+    ],
+)
+def test_given_shape_outside_the_rules_when_redacted_then_text_is_unchanged(text: str) -> None:
+    """Scenario: hashes, release identifiers, short or legacy Cloudflare strings and unlabelled Netlify tokens are left unchanged.
 
-    Slice: 79 security hardening (regression guard for GWT-62.3).
+    Slice: 79 security hardening (GWT-62.3 negatives, amended).
     @contract-shape:bounded-change
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
-    ### Given
-    text = "commit 3f786850e387550fdab836ed7e6dc881de23001b imports pkg.sub.module"
-
-    ### When / Then
+    ### Given / When / Then
     assert redact.redact_secrets(text) == text
 
 
-FAKE_NETLIFY = "abcdefghijklmnop" + "12345"
-
-
-def test_given_labelled_netlify_token_when_redacted_then_value_is_masked() -> None:
-    """Scenario: a Netlify token next to its label is masked; the label is normalised to netlify_token.
-
-    Slice: 79 security hardening (GWT-62.3, Netlify).
-    @contract-shape:bounded-change
-    Outcome anchor: Stored evidence never carries raw secret-looking values
-    """
-    ### Given
-    text = "deploy NETLIFY_AUTH_TOKEN=" + FAKE_NETLIFY + " end"
-
-    ### When
-    out = redact.redact_secrets(text)
-
-    ### Then
-    assert FAKE_NETLIFY not in out
-    assert out == "deploy netlify_token=[REDACTED] end"
-
-
-def test_given_non_ascii_letter_before_netlify_label_when_redacted_then_value_is_masked() -> None:
-    """Scenario: a Netlify label after a non-ASCII letter is still masked, as in the CLI.
-
-    Slice: 79 security hardening (review follow-up, GWT-62.3).
-    @contract-shape:bounded-change
-    Outcome anchor: Stored evidence never carries raw secret-looking values
-    """
-    ### Given
-    text = "\u00e9" + "NETLIFY_AUTH_TOKEN=" + FAKE_NETLIFY
-
-    ### When
-    out = redact.redact_secrets(text)
-
-    ### Then
-    assert FAKE_NETLIFY not in out
-    assert out == "\u00e9netlify_token=[REDACTED]"
-
-
-def test_given_non_breaking_space_in_uri_and_fly_token_when_redacted_then_only_the_token_is_masked() -> (
-    None
-):
-    """Scenario: Unicode spaces end a connection string and separate a Fly token label the same way in both languages.
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("\u00e9NETLIFY_AUTH_TOKEN=" + FAKE_NETLIFY, "\u00e9netlify_token=[REDACTED]"),
+        (
+            "dsn=postgresql://app:pw@h/x\u00a0end FlyV1\u00a0fm2_AbCdEf0123456789XyZ",
+            "dsn=[REDACTED]\u00a0end [REDACTED]",
+        ),
+    ],
+    ids=["non-ascii-before-label", "nbsp-separators"],
+)
+def test_given_unicode_boundary_and_spacing_when_redacted_then_masking_matches_cli(
+    text: str, expected: str
+) -> None:
+    """Scenario: non-ASCII letters and Unicode spaces are handled the same way in the sandbox and the CLI.
 
     Slice: 79 security hardening (review follow-up, parity).
     @contract-shape:bounded-change
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
-    ### Given
-    text = "dsn=postgresql://app:pw@h/x\u00a0end FlyV1\u00a0fm2_AbCdEf0123456789XyZ"
-
-    ### When / Then
-    assert redact.redact_secrets(text) == "dsn=[REDACTED]\u00a0end [REDACTED]"
-
-
-def test_given_versioned_release_identifier_when_redacted_then_text_is_unchanged() -> None:
-    """Scenario: a v1.0- release identifier is not mistaken for a Cloudflare token.
-
-    Slice: 79 security hardening (review follow-up, GWT-62.3).
-    @contract-shape:bounded-change
-    Outcome anchor: Stored evidence never carries raw secret-looking values
-    """
-    ### Given
-    text = "release v1.0-release-20241231 shipped"
-
-    ### When / Then
-    assert redact.redact_secrets(text) == text
-
-
-FAKE_CF_40 = "a1B2c3D4e5F6g7H8i9J0" * 2
-
-
-def test_given_each_documented_cloudflare_prefix_when_redacted_then_token_is_masked() -> None:
-    """Scenario: user, account and global-key Cloudflare tokens are all masked.
-
-    Slice: 79 security hardening (GWT-62.3, amended).
-    @contract-shape:bounded-change
-    Outcome anchor: Stored evidence never carries raw secret-looking values
-    """
-    ### Given
-    cases = ["cfut_" + FAKE_CF_40, "cfat_" + FAKE_CF_40, "cfk_" + FAKE_CF_40]
-
-    ### When / Then
-    for token in cases:
-        assert redact.redact_secrets(f"token {token} end") == "token [REDACTED] end", token
-
-
-def test_given_cloudflare_prefix_with_39_characters_when_redacted_then_text_is_unchanged() -> None:
-    """Scenario: a Cloudflare-looking string shorter than the documented length is left alone.
-
-    Slice: 79 security hardening (GWT-62.3, amended).
-    @contract-shape:bounded-change
-    Outcome anchor: Stored evidence never carries raw secret-looking values
-    """
-    ### Given
-    text = "token cfut_" + FAKE_CF_40[:39] + " end"
-
-    ### When / Then
-    assert redact.redact_secrets(text) == text
-
-
-def test_given_legacy_unprefixed_cloudflare_token_when_redacted_then_text_is_unchanged() -> None:
-    """Scenario: a legacy 40-character Cloudflare token has no shape to match, so it is not masked.
-
-    Slice: 79 security hardening (GWT-62.3, amended).
-    @contract-shape:bounded-change
-    Outcome anchor: Stored evidence never carries raw secret-looking values
-    """
-    ### Given
-    text = "token " + FAKE_CF_40 + " end"
-
-    ### When / Then
-    assert redact.redact_secrets(text) == text
-
-
-def test_given_unlabelled_netlify_token_when_redacted_then_text_is_unchanged() -> None:
-    """Scenario: a Netlify token without its label is not masked, to avoid hiding hashes.
-
-    Slice: 79 security hardening (GWT-62.3, amended).
-    @contract-shape:bounded-change
-    Outcome anchor: Stored evidence never carries raw secret-looking values
-    """
-    ### Given
-    text = "token abcdefghijklmnop12345 end"
-
-    ### When / Then
-    assert redact.redact_secrets(text) == text
-
-
-def test_given_mariadb_redis_and_amqp_uris_when_redacted_then_each_uri_is_masked() -> None:
-    """Scenario: the remaining connection-string schemes in the changelog are masked.
-
-    Slice: 79 security hardening (GWT-62.2).
-    @contract-shape:bounded-change
-    Outcome anchor: Stored evidence never carries raw secret-looking values
-    """
-    ### Given
-    cases = [
-        "mariadb://" + "u:p" + "@db/x",
-        "redis://" + ":pw" + "@cache:6379/0",
-        "amqp://" + "guest:g" + "@broker/vhost",
-    ]
-
-    ### When / Then
-    for uri in cases:
-        assert redact.redact_secrets(f"dsn={uri} end") == "dsn=[REDACTED] end", uri
+    ### Given / When / Then
+    assert redact.redact_secrets(text) == expected
 
 
 def test_given_jwt_in_evidence_row_when_redact_row_then_snippet_is_masked() -> None:
@@ -441,14 +352,12 @@ def test_given_jwt_in_evidence_row_when_redact_row_then_snippet_is_masked() -> N
     Outcome anchor: Stored evidence never carries raw secret-looking values
     """
     ### Given
-    jwt = "eyJ" + "hbGciOiJIUzI1NiJ9" + "." + "eyJzdWIiOiIxMjMifQ" + "." + "c2lnbmF0dXJlMTIz"
-    row = {"snippet": "auth=" + jwt, "scanner_source": "Snyk"}
+    row = {"snippet": "auth=" + JWT, "scanner_source": "Snyk"}
 
     ### When
     out = redact.redact_row(row)
 
     ### Then
-    assert jwt not in out["snippet"]
     assert out["snippet"] == "auth=[REDACTED]"
     assert out["scanner_source"] == "Snyk"
 
@@ -472,18 +381,3 @@ def test_given_adversarial_jwt_like_run_when_redacted_then_it_finishes_quickly()
 
     ### Then
     assert elapsed < 2.0, f"redaction took {elapsed:.2f}s"
-
-
-def test_given_jwt_after_dash_or_underscore_when_redacted_then_token_is_masked() -> None:
-    """Scenario: a JWT preceded by a dash or underscore is still masked.
-
-    Slice: 79 security hardening (GWT-62.1, review follow-up).
-    @contract-shape:bounded-change
-    Outcome anchor: Stored evidence never carries raw secret-looking values
-    """
-    ### Given
-    jwt = "eyJ" + "hbGciOiJIUzI1NiJ9" + "." + "eyJzdWIiOiIxMjMifQ" + "." + "c2lnbmF0dXJlMTIz"
-
-    ### When / Then
-    assert redact.redact_secrets("x-auth-" + jwt) == "x-auth-[REDACTED]"
-    assert redact.redact_secrets("jwt_" + jwt) == "jwt_[REDACTED]"

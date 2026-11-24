@@ -471,185 +471,126 @@ test('given control and zero-width separators when maskSecrets then Bearer token
   assert.equal(maskSecrets('Bearer\u200btok').text, 'Bearer [REDACTED]');
 });
 
-test('given a JWT, database URIs and documented prefixed service tokens when maskSecrets then each is masked', () => {
+test('given a JWT in any position when maskSecrets then the token is masked', () => {
   /**
-   * Scenario: JWTs, connection strings and Cloudflare/Fly tokens are masked, mirroring the sandbox.
-   * Slice: 79 security hardening (GWT-62.1\u201362.3).
+   * Scenario: a JWT is masked wherever it appears in scanned text, matching the sandbox.
+   * Slice: 79 security hardening (GWT-62.1).
    * @contract-shape:bounded-change
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
-   * Given one credential of each new shape inside plain text,
+   * Given a JWT after nothing, after an equals sign, after a dash, and after an underscore,
    * When maskSecrets runs,
-   * Then each credential becomes the placeholder and the surrounding text is kept.
+   * Then each token is replaced and the surrounding text is kept.
    */
-  // -- Given --
+  // -- Given / When / Then --
   const jwt = 'eyJ' + 'hbGciOiJIUzI1NiJ9' + '.' + 'eyJzdWIiOiIxMjMifQ' + '.' + 'c2lnbmF0dXJlMTIz';
   const cases = [
     [jwt, '[REDACTED]'],
-    ['postgresql://' + 'app:hunter' + '2@db.internal:5432/app', '[REDACTED]'],
-    ['mongodb+srv://' + 'svc:pw' + '@cluster0.example.net/prod', '[REDACTED]'],
-    ['cfut_' + 'a1B2c3D4e5F6g7H8i9J0' + 'a1B2c3D4e5F6g7H8i9J0' + 'k1l2m3', '[REDACTED]'],
-    ['FlyV1 ' + 'fm2_' + 'AbCdEf0123456789XyZ', '[REDACTED]'],
+    ['auth=' + jwt + ' end', 'auth=[REDACTED] end'],
+    ['x-auth-' + jwt, 'x-auth-[REDACTED]'],
+    ['jwt_' + jwt, 'jwt_[REDACTED]'],
   ];
-
-  // -- When / Then --
-  for (const [raw, placeholder] of cases) {
-    assert.equal(maskSecrets(`x ${raw} y`).text, `x ${placeholder} y`, raw);
+  for (const [input, expected] of cases) {
+    assert.equal(maskSecrets(input).text, expected, input);
   }
 });
 
-test('given a git SHA and a dotted module path when maskSecrets then the text is unchanged', () => {
+test('given connection URIs for every supported scheme when maskSecrets then each whole URI is masked', () => {
   /**
-   * Scenario: new rules do not mask a commit SHA or a dotted identifier.
-   * Slice: 79 security hardening (regression guard for GWT-62.3).
-   * @contract-shape:bounded-change
-   * Outcome anchor: Stored evidence never carries raw secret-looking values
-   *
-   * Given a commit SHA and a dotted module path,
-   * When maskSecrets runs,
-   * Then the output equals the input.
-   */
-  // -- Given --
-  const text = 'commit 3f786850e387550fdab836ed7e6dc881de23001b imports pkg.sub.module';
-
-  // -- When / Then --
-  assert.equal(maskSecrets(text).text, text);
-});
-
-test('given a labelled Netlify token when maskSecrets then the value is masked and the label normalised to netlify_token', () => {
-  /**
-   * Scenario: a Netlify token next to its label is masked, mirroring the sandbox.
-   * Slice: 79 security hardening (GWT-62.3, Netlify).
-   * @contract-shape:bounded-change
-   * Outcome anchor: Stored evidence never carries raw secret-looking values
-   *
-   * Given a Netlify token written after its NETLIFY_AUTH_TOKEN label,
-   * When maskSecrets runs,
-   * Then the value is replaced and the label is normalised to netlify_token.
-   */
-  // -- Given / When / Then --
-  const value = 'abcdefghijklmnop' + '12345';
-  const out = maskSecrets(`deploy NETLIFY_AUTH_TOKEN=${value} end`).text;
-  assert.ok(!out.includes(value), 'raw Netlify token must not appear');
-  assert.equal(out, 'deploy netlify_token=[REDACTED] end');
-});
-
-test('given a non-ASCII letter before a Netlify label when maskSecrets then the value is masked', () => {
-  /**
-   * Scenario: a Netlify label after a non-ASCII letter is still masked, as in the sandbox.
-   * Slice: 79 security hardening (review follow-up, GWT-62.3).
-   * @contract-shape:bounded-change
-   * Outcome anchor: Stored evidence never carries raw secret-looking values
-   *
-   * Given a non-ASCII letter directly before NETLIFY_AUTH_TOKEN=<value>,
-   * When maskSecrets runs,
-   * Then the value is masked and the letter is kept.
-   */
-  // -- Given / When / Then --
-  const value = 'abcdefghijklmnop' + '12345';
-  assert.equal(maskSecrets('\u00e9NETLIFY_AUTH_TOKEN=' + value).text, '\u00e9netlify_token=[REDACTED]');
-});
-
-test('given non-breaking spaces in a URI and a Fly token when maskSecrets then only the token is masked', () => {
-  /**
-   * Scenario: Unicode spaces end a connection string and separate a Fly token label, matching the sandbox.
-   * Slice: 79 security hardening (review follow-up, parity).
-   * @contract-shape:bounded-change
-   * Outcome anchor: Stored evidence never carries raw secret-looking values
-   *
-   * Given a connection string and a Fly token separated by non-breaking spaces,
-   * When maskSecrets runs,
-   * Then the output keeps the separators and masks both credentials.
-   */
-  // -- Given / When / Then --
-  const text = 'dsn=postgresql://app:pw@h/x\u00a0end FlyV1\u00a0fm2_AbCdEf0123456789XyZ';
-  assert.equal(maskSecrets(text).text, 'dsn=[REDACTED]\u00a0end [REDACTED]');
-});
-
-test('given a v1.0 release identifier when maskSecrets then the text is unchanged', () => {
-  /**
-   * Scenario: a v1.0- release identifier is not mistaken for a Cloudflare token.
-   * Slice: 79 security hardening (review follow-up, GWT-62.3).
-   * @contract-shape:bounded-change
-   * Outcome anchor: Stored evidence never carries raw secret-looking values
-   *
-   * Given a release identifier that starts with v1.0-,
-   * When maskSecrets runs,
-   * Then the text is unchanged.
-   */
-  // -- Given / When / Then --
-  const text = 'release v1.0-release-20241231 shipped';
-  assert.equal(maskSecrets(text).text, text);
-});
-
-test('given cfat_ and cfk_ Cloudflare tokens when maskSecrets then each is masked', () => {
-  /**
-   * Scenario: account and global-key Cloudflare tokens are masked, matching the sandbox.
-   * Slice: 79 security hardening (GWT-62.3, amended).
-   * @contract-shape:bounded-change
-   * Outcome anchor: Stored evidence never carries raw secret-looking values
-   *
-   * Given account and global-key Cloudflare tokens with 40 characters,
-   * When maskSecrets runs,
-   * Then each token is replaced with the placeholder.
-   */
-  // -- Given / When / Then --
-  const body = 'a1B2c3D4e5F6g7H8i9J0' + 'a1B2c3D4e5F6g7H8i9J0';
-  assert.equal(maskSecrets('t cfat_' + body + ' e').text, 't [REDACTED] e');
-  assert.equal(maskSecrets('t cfk_' + body + ' e').text, 't [REDACTED] e');
-});
-
-test('given a 39-character cfut_ string and a legacy 40-character token when maskSecrets then both are unchanged', () => {
-  /**
-   * Scenario: a short Cloudflare-looking string and a legacy unprefixed token are not masked.
-   * Slice: 79 security hardening (GWT-62.3, amended).
-   * @contract-shape:bounded-change
-   * Outcome anchor: Stored evidence never carries raw secret-looking values
-   *
-   * Given a cfut_ string with 39 characters and a 40-character unprefixed token,
-   * When maskSecrets runs,
-   * Then both strings are unchanged.
-   */
-  // -- Given / When / Then --
-  const body = 'a1B2c3D4e5F6g7H8i9J0' + 'a1B2c3D4e5F6g7H8i9J0';
-  const short = 't cfut_' + body.slice(0, 39) + ' e';
-  const legacy = 't ' + body + ' e';
-  assert.equal(maskSecrets(short).text, short);
-  assert.equal(maskSecrets(legacy).text, legacy);
-});
-
-test('given an unlabelled Netlify token when maskSecrets then the text is unchanged', () => {
-  /**
-   * Scenario: a Netlify token without its label is not masked, to avoid hiding hashes.
-   * Slice: 79 security hardening (GWT-62.3, amended).
-   * @contract-shape:bounded-change
-   * Outcome anchor: Stored evidence never carries raw secret-looking values
-   *
-   * Given a 17-character Netlify-looking token with no label,
-   * When maskSecrets runs,
-   * Then the text is unchanged.
-   */
-  // -- Given / When / Then --
-  const text = 'token abcdefghijklmnop12345 end';
-  assert.equal(maskSecrets(text).text, text);
-});
-
-test('given mariadb, redis and amqp URIs when maskSecrets then each is masked', () => {
-  /**
-   * Scenario: the remaining connection-string schemes are masked, matching the sandbox.
+   * Scenario: connection strings with embedded credentials are masked in full, matching the sandbox.
    * Slice: 79 security hardening (GWT-62.2).
    * @contract-shape:bounded-change
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
-   * Given one connection string per remaining scheme,
+   * Given one connection string per supported scheme,
    * When maskSecrets runs,
    * Then each is replaced with the placeholder.
    */
   // -- Given / When / Then --
-  const cases = ['mariadb://' + 'u:p' + '@db/x', 'redis://' + ':pw' + '@cache:6379/0', 'amqp://' + 'guest:g' + '@broker/vhost'];
-  for (const uri of cases) {
+  const uris = [
+    'postgresql://' + 'app:hunter' + '2@db.internal:5432/app',
+    'postgres://' + 'app:pw' + '@db/x',
+    'mysql://' + 'root:r00t' + '@127.0.0.1/shop',
+    'mariadb://' + 'u:p' + '@db/x',
+    'mongodb+srv://' + 'svc:pw' + '@cluster0.example.net/prod',
+    'redis://' + ':pw' + '@cache:6379/0',
+    'amqp://' + 'guest:g' + '@broker/vhost',
+  ];
+  for (const uri of uris) {
     assert.equal(maskSecrets(`dsn=${uri} end`).text, 'dsn=[REDACTED] end', uri);
   }
+});
+
+test('given documented service tokens when maskSecrets then each is masked', () => {
+  /**
+   * Scenario: documented prefixed service tokens are masked; a labelled Netlify value keeps only its label name.
+   * Slice: 79 security hardening (GWT-62.3, amended).
+   * @contract-shape:bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given Cloudflare user, account and global tokens, Fly tokens, and a labelled Netlify token,
+   * When maskSecrets runs,
+   * Then each token is replaced and the Netlify label is normalised.
+   */
+  // -- Given / When / Then --
+  const cfBody = 'a1B2c3D4e5F6g7H8i9J0' + 'a1B2c3D4e5F6g7H8i9J0' + 'k1l2m3';
+  const netlify = 'abcdefghijklmnop' + '12345';
+  const cases = [
+    ['token cfut_' + cfBody + ' end', 'token [REDACTED] end'],
+    ['token cfat_' + cfBody + ' end', 'token [REDACTED] end'],
+    ['token cfk_' + cfBody + ' end', 'token [REDACTED] end'],
+    ['token FlyV1 fm2_AbCdEf0123456789XyZ end', 'token [REDACTED] end'],
+    ['token fo1_AbCdEf0123456789XyZ0123 end', 'token [REDACTED] end'],
+    ['deploy NETLIFY_AUTH_TOKEN=' + netlify + ' end', 'deploy netlify_token=[REDACTED] end'],
+  ];
+  for (const [input, expected] of cases) {
+    assert.equal(maskSecrets(input).text, expected, input);
+  }
+});
+
+test('given shapes outside the rules when maskSecrets then the text is unchanged', () => {
+  /**
+   * Scenario: hashes, release identifiers, short or legacy Cloudflare strings and unlabelled Netlify tokens are left unchanged.
+   * Slice: 79 security hardening (GWT-62.3 negatives, amended).
+   * @contract-shape:bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given text that resembles a token but matches no rule,
+   * When maskSecrets runs,
+   * Then the output equals the input.
+   */
+  // -- Given / When / Then --
+  const body = 'a1B2c3D4e5F6g7H8i9J0' + 'a1B2c3D4e5F6g7H8i9J0';
+  const cases = [
+    'commit 3f786850e387550fdab836ed7e6dc881de23001b imports pkg.sub.module',
+    'release v1.0-release-20241231 shipped',
+    't cfut_' + body.slice(0, 39) + ' e',
+    't ' + body + ' e',
+    'token abcdefghijklmnop12345 end',
+  ];
+  for (const text of cases) {
+    assert.equal(maskSecrets(text).text, text, text);
+  }
+});
+
+test('given Unicode boundary and spacing cases when maskSecrets then results match the sandbox', () => {
+  /**
+   * Scenario: non-ASCII letters and Unicode spaces are handled the same way in the CLI and the sandbox.
+   * Slice: 79 security hardening (review follow-up, parity).
+   * @contract-shape:bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a Netlify label after a non-ASCII letter and a URI and Fly token separated by non-breaking spaces,
+   * When maskSecrets runs,
+   * Then both outputs match the sandbox expectations.
+   */
+  // -- Given / When / Then --
+  const netlify = 'abcdefghijklmnop' + '12345';
+  assert.equal(maskSecrets('\u00e9NETLIFY_AUTH_TOKEN=' + netlify).text, '\u00e9netlify_token=[REDACTED]');
+  assert.equal(
+    maskSecrets('dsn=postgresql://app:pw@h/x\u00a0end FlyV1\u00a0fm2_AbCdEf0123456789XyZ').text,
+    'dsn=[REDACTED]\u00a0end [REDACTED]',
+  );
 });
 
 test('given an adversarial JWT-like run when maskSecrets then it finishes quickly', () => {
@@ -668,21 +609,4 @@ test('given an adversarial JWT-like run when maskSecrets then it finishes quickl
   const started = performance.now();
   maskSecrets(text);
   assert.ok(performance.now() - started < 2000, 'redaction must stay linear');
-});
-
-test('given a JWT after a dash or underscore when maskSecrets then the token is masked', () => {
-  /**
-   * Scenario: a JWT preceded by a dash or underscore is still masked, matching the sandbox.
-   * Slice: 79 security hardening (GWT-62.1, review follow-up).
-   * @contract-shape:bounded-change
-   * Outcome anchor: Stored evidence never carries raw secret-looking values
-   *
-   * Given a JWT preceded by a dash and another preceded by an underscore,
-   * When maskSecrets runs,
-   * Then both tokens are replaced.
-   */
-  // -- Given / When / Then --
-  const jwt = 'eyJ' + 'hbGciOiJIUzI1NiJ9' + '.' + 'eyJzdWIiOiIxMjMifQ' + '.' + 'c2lnbmF0dXJlMTIz';
-  assert.equal(maskSecrets('x-auth-' + jwt).text, 'x-auth-[REDACTED]');
-  assert.equal(maskSecrets('jwt_' + jwt).text, 'jwt_[REDACTED]');
 });
