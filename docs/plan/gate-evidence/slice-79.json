@@ -2,7 +2,7 @@
   "slice": "slice-79-security-hardening",
   "date": "2026-11-24",
   "branch": "slice/79-security-hardening",
-  "commit": "pending-head",
+  "commit": "cc5b914",
   "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23); GWT-62.3 amended 2026-11-24 to documented Cloudflare prefixes",
   "commands": [
     {
@@ -82,7 +82,7 @@
     {
       "cmd": "cd cli && npm test (GWT-62.6 all-fields test; removed masking to confirm RED, then restored)",
       "result": "243 passed, 0 failed; RED with masking removed (1 fail).",
-      "commit": "pending-head"
+      "commit": "cc5b914"
     }
   ],
   "coverage_by_gwt": {
