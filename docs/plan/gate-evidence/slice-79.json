@@ -2,55 +2,64 @@
   "slice": "slice-79-security-hardening",
   "date": "2026-11-24",
   "branch": "slice/79-security-hardening",
-  "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23): JWT, DB URI, service-token masking; file:// CSP; setup scripts unaffected",
+  "commit": "acf18c3",
+  "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23); GWT-62.3 amended 2026-11-24 to documented Cloudflare prefixes",
   "commands": [
     {
-      "cmd": "uv run pytest sandbox/tests --cov=sandbox",
-      "result": "382 passed; coverage 95.51% (gate 95%)",
-      "commit": "d481e02"
+      "cmd": "uv run pytest sandbox/tests",
+      "result": "392 passed (includes redact unit, redact_row write-path, adversarial timing test)",
+      "commit": "acf18c3"
     },
     {
-      "cmd": "cd cli && npm run test:coverage",
-      "result": "237 passed, 0 failed; lines 94.68%, branches 80.45%",
-      "commit": "d481e02"
+      "cmd": "cd cli && npm test",
+      "result": "245 passed, 0 failed",
+      "commit": "acf18c3"
     },
     {
       "cmd": "cd prototypes/dc-dashboard && npm run test:coverage",
-      "result": "424 passed, 0 failed. Live smoke (cloud Supabase from .env) passes after the project was restored; it had returned HTTP 521 while paused. Dashboard is unchanged vs main.",
-      "commit": "d481e02"
+      "result": "424 passed, 0 failed (dashboard unchanged vs main; live smoke passes against cloud Supabase)"
     },
     {
-      "cmd": "uv run ruff check sandbox/redact.py sandbox/tests/test_redact.py && ruff format --check",
-      "result": "All checks passed; formatting clean"
+      "cmd": "ruff check / ruff format --check sandbox/redact.py sandbox/tests/test_redact.py",
+      "result": "clean"
     },
     {
-      "cmd": "python3 -c \"import sandbox.redact\"",
-      "result": "exit 0"
+      "cmd": "gitleaks detect --no-git --config .gitleaks.toml",
+      "result": "exit 0 (.omc/ allowlisted by operator decision)"
     },
     {
-      "cmd": "file:// DevTools console check on prototypes/dc-dashboard/AgentVetter.dc.html (Playwright Chromium 131, headless)",
-      "result": "CSP violations: 0. Other console errors are pre-existing: file:// blocks module imports and fetch (CORS), so the dashboard's kit modules do not load over file://. Dashboard unchanged by this slice."
+      "cmd": "file:// DevTools check on AgentVetter.dc.html (headless Chromium)",
+      "result": "0 CSP violations. Pre-existing: file:// blocks module imports and fetch (CORS); dashboard unchanged by this slice. Second GWT-62.4 clause (Supabase https calls not blocked by in-HTML policy) NOT probed."
     },
     {
-      "cmd": "bash -n scripts/setup-supabase.sh; bash -n scripts/setup-modal.sh; <script> --help",
-      "result": "syntax OK; --help exit 0 for both. Live dry-run (GWT-62.5) NOT run: needs credentials; to be run by operator."
+      "cmd": "./scripts/setup-supabase.sh (no --force), cloud project",
+      "result": "exit 0, {\"status\":\"ready\"} (no-op)"
     },
     {
-      "cmd": "gitleaks (quality-gates T1)",
-      "result": "exit 0 after adding .omc/ to the .gitleaks.toml path allowlist (operator decision: ignore .omc/ everywhere). Before the change: 54 hits, all in .omc/ local session state."
+      "cmd": "./scripts/setup-modal.sh --non-interactive (operator approved)",
+      "result": "first run exit 1: python-dotenv missing in the Modal CLI tool env (no changes). Installed python-dotenv into that env only; rerun exit 0: synced agentvetter-supabase and agentvetter-scan-secrets, deployed agentvetter-scan from the working tree. The deploy was NOT from a clean environment."
     }
   ],
   "coverage_by_gwt": {
-    "GWT-62.1 JWT": "PASS (tests in sandbox/tests/test_redact.py and cli/test/evidenceVerify.test.js; wired in scan_app.py redact_row and cli router maskSecrets)",
-    "GWT-62.2 DB URIs": "PASS (same tests and wiring)",
-    "GWT-62.3 service tokens": "PARTIAL: Cloudflare v1.0- and Fly fo1_/fm2_ PASS. Netlify covered only when labelled (NETLIFY_AUTH_TOKEN=...) in d481e02; unlabelled Netlify tokens are not masked by design (avoids git SHA false positives).",
-    "GWT-62.4 file:// no CSP": "PARTIAL: CSP violations 0 in DevTools check; static check (no CSP meta) passes.",
-    "GWT-62.5 setup scripts": "PARTIAL: syntax and --help pass. ./scripts/setup-supabase.sh (no --force) run against the cloud project: exit 0, output {\"status\":\"ready\"} (idempotent no-op). ./scripts/setup-modal.sh --non-interactive (operator approved): first attempt failed because python-dotenv was missing from the Modal CLI tool env (no changes made); installed python-dotenv into that env only; rerun exit 0. Synced agentvetter-supabase and agentvetter-scan-secrets, deployed agentvetter-scan (scan_app.py) from the working tree. Deployed code includes the commit after 3f4b48e."
+    "GWT-62.1 JWT": "PASS: tests + redact_row write-path test; lookbehind anchored to fix quadratic scan (acf18c3)",
+    "GWT-62.2 DB URIs": "PASS: postgres, mysql, mongodb+srv, mariadb, redis, amqp tested",
+    "GWT-62.3 service tokens (amended)": "PASS for documented forms: cfut_/cfat_/cfk_ (40 chars), 39-char and legacy unprefixed negatives, Fly fo1_/fm2_, labelled Netlify, unlabelled Netlify negative, v1.0- release negative. OPEN: the {40,} threshold and the Fly fm1a_/fm1r_ prefixes are not verified against the Cloudflare and Fly docs (needs re-fetch).",
+    "GWT-62.4 file:// no CSP": "PARTIAL: CSP violations 0; second clause unprobed",
+    "GWT-62.5 setup scripts": "PARTIAL: Supabase run exit 0; Modal run exit 0 but not in a clean environment (precondition not met); the Given wording needs an amendment or a clean rerun"
+  },
+  "reviews": {
+    "nw-software-crafter-reviewer": "CHANGES REQUESTED (earlier diff). Addressed: ReDoS (acf18c3), cfat/cfk and negative tests. Open: Fly prefix and threshold docs check; no TDD execution log for the RED phase (RED was observed in-session for the first batches only).",
+    "nw-acceptance-designer-reviewer": "CHANGES REQUESTED. Addressed in tests and nits (cfat/cfk, negatives, URI schemes, redact_row, spec branch header, redundant gitleaks path). GWT-62.4 second clause and GWT-62.5 clean-environment precondition remain open.",
+    "nw-solution-architect-reviewer": "APPROVED with non-blocking notes: parity by convention only; llm-usage-tracking.md has a third redaction design; decision for narrowed GWT-62.3 not recorded in DECISIONS.md; .gitleaks .omc/ allowlist broader than needed (operator decision).",
+    "nw-ddd-architect-reviewer": "APPROVED: no schema or domain change; EVIDENCE_FIELDS unchanged."
   },
   "open_items": [
-    "GWT-62.5 live dry-run of scripts/setup-supabase.sh and scripts/setup-modal.sh (operator, with credentials).",
-    "Stub has ### Closing Gates section (added); /verify-slice must return COMPLETE after the items above are closed.",
-    "Code review (nw-software-crafter-reviewer) not yet run."
+    "Verify Cloudflare {40,} length and prefixes, and Fly fm1a_/fm1r_, against the official docs (re-fetch required).",
+    "GWT-62.4: probe the second clause (Supabase https calls not blocked by an in-HTML policy), or mark it open.",
+    "GWT-62.5: rerun in a clean environment, or amend the Given to match the run performed.",
+    "Record the GWT-62.3 narrowing (unlabelled Netlify, legacy Cloudflare not masked) and the .omc/ allowlist in docs/plan/DECISIONS.md.",
+    "Re-submit to nw-software-crafter-reviewer and nw-acceptance-designer-reviewer for approval on acf18c3.",
+    "Run /verify-slice after the above."
   ],
   "verdict": "BLOCKED",
   "spec_path": "docs/plan/slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md"
