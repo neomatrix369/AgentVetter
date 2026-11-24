@@ -47,12 +47,14 @@
 **Given** a scan finding whose `snippet` contains a JWT (3-segment base64url: `xxxxx.yyyyy.zzzzz`)
 **When** `redact_secrets(text)` is called
 **Then** the JWT is replaced with `[REDACTED]`
+**And** a JWT glued to a word (for example `xeyJ...`) is replaced with `[REDACTED]` after the word
 **And** the redacted text is written to `findings.snippet`
 
 ### GWT-62.2 — DB connection strings redacted
 **Given** a scan finding containing `postgresql://user:pass@host/db` or `mongodb+srv://...` or `mysql://...`
 **When** `redact_secrets(text)` is called
 **Then** the URI (including embedded credentials) is replaced with `[REDACTED]`
+**And** a URI glued to a word (for example `dbxpostgres://...`) or with a driver suffix (for example `postgresql+psycopg2://...`) is replaced with `[REDACTED]`
 
 ### GWT-62.3 — Service tokens redacted (amended 2026-11-24)
 **Given** a scan finding containing a Cloudflare API token in a documented prefixed format (`cfut_`, `cfat_` or `cfk_` followed by 40+ characters), a Fly.io token (`fo1_` or `fm2_`, optionally preceded by `FlyV1`), or a Netlify token written after a `NETLIFY_AUTH_TOKEN=`-style label

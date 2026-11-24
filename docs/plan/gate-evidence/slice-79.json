@@ -2,7 +2,7 @@
   "slice": "slice-79-security-hardening",
   "date": "2026-11-24",
   "branch": "slice/79-security-hardening",
-  "commit": "ab2e4ed",
+  "commit": "c127b5b",
   "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23); GWT-62.3 amended 2026-11-24 to documented Cloudflare prefixes",
   "commands": [
     {
@@ -87,7 +87,7 @@
     {
       "cmd": "uv run pytest sandbox/tests; cd cli && npm test (after glued JWT/URI fix)",
       "result": "419 passed (sandbox); 243 passed, 0 failed (CLI). Glued xeyJ... and dbxpostgres://... masked on both sides. Timing 200k chars: 0.032 s Python, 0.002 s JS.",
-      "commit": "ab2e4ed"
+      "commit": "c127b5b"
     }
   ],
   "coverage_by_gwt": {
@@ -102,10 +102,11 @@
     "nw-software-crafter-reviewer": "Round 2 CHANGES REQUESTED. Addressed: JWT boundary (9c41d33, RED evidence), cfat/cfk and negatives. Open: test count 15 Python / 11 JS vs the 2x-GWT budget of 10 (consolidate or justify); no execution log for earlier RED batches.",
     "nw-acceptance-designer-reviewer": "Round 2 CHANGES REQUESTED. Addressed: contract-shape tags are @contract-shape:pure-function (operator form, DECISIONS 2026-11-24); stale scenario names renamed; spec provenance recorded. Open by design: GWT-62.4 second clause, GWT-62.5 clean environment.",
     "nw-solution-architect-reviewer": "APPROVED with non-blocking notes (parity by convention only; llm-usage-tracking.md third redaction design; gitleaks allowlist breadth).",
-    "nw-ddd-architect-reviewer": "APPROVED: no schema or domain change."
+    "nw-ddd-architect-reviewer": "APPROVED: no schema or domain change.",
+    "stale_note": "Reviews on e3d6889 (architecture, software craft, acceptance) returned NOT APPROVED; findings addressed in the commits that follow. Re-review pending."
   },
   "open_items": [
-    "Reviewer approvals on head 2a25385: software-craft APPROVED; domain APPROVED; architecture and acceptance NOT APPROVED on record wording only (fixed in the following commit); re-review pending.",
+    "Reviewer re-review pending on the head that contains these fixes (architecture, software craft, acceptance).",
     "Contract-shape tag: DECIDED by operator, @contract-shape: form (DECISIONS 2026-11-24).",
     "RED evidence: DECIDED by operator, gap accepted and recorded (DECISIONS 2026-11-24).",
     "JWT segment cap 2048: DECIDED by operator, residual risk accepted (DECISIONS 2026-11-24).",
@@ -118,5 +119,15 @@
     "Glued JWT and DB URI: FIXED in ab2e4ed (DECISIONS 2026-11-24 closing row)."
   ],
   "verdict": "BLOCKED",
-  "spec_path": "docs/plan/slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md"
+  "spec_path": "docs/plan/slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md",
+  "coverage_pct": 95.5,
+  "coverage_target": 95,
+  "branch_pct": 92.4,
+  "branch_target": 95,
+  "branch_scope_note": "Repository-wide sandbox branch coverage (756/818). sandbox/redact.py itself is 100% line and branch (6/6). The shortfall is outside slice 79's files.",
+  "complexity_tool": "xenon",
+  "complexity_grade": "A",
+  "complexity_passed": true,
+  "static_analysis": "ruff check sandbox: clean",
+  "security_scan": "scripts/security-scan.sh exits 1 locally: Trivy HIGH/CRITICAL hits in .worktrees/* checkouts and the intentional fixtures/skills/vuln-dependency-lodash; TruffleHog 'verified' results in guard/tests/test_entry.py. CI secrets and SAST jobs pass on the branch. Operator decision needed."
 }
