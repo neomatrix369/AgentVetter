@@ -2,7 +2,7 @@
   "slice": "slice-79-security-hardening",
   "date": "2026-11-24",
   "branch": "slice/79-security-hardening",
-  "commit": "c002d2f",
+  "commit": "7d36ce7",
   "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23); GWT-62.3 amended 2026-11-24 to documented Cloudflare prefixes",
   "commands": [
     {
@@ -63,6 +63,11 @@
       "cmd": "uv run pytest sandbox/tests; cd cli && npm test (after underscore-boundary and ASCII-parity fix)",
       "result": "412 passed (sandbox); 241 passed, 0 failed (CLI). Ruff check and format clean on changed Python files.",
       "commit": "c002d2f"
+    },
+    {
+      "cmd": "uv run pytest sandbox/tests; cd cli && npm test (after trailing-boundary and judge masking fix)",
+      "result": "415 passed (sandbox); 241 passed, 0 failed (CLI). Ruff clean. markdownlint v0.43.0 clean. Probes: ghp_<36>_end and AKIA<16>_x masked on both sides.",
+      "commit": "7d36ce7"
     }
   ],
   "coverage_by_gwt": {
@@ -79,6 +84,7 @@
     "nw-ddd-architect-reviewer": "APPROVED: no schema or domain change."
   },
   "open_items": [
+    "Reviewer approvals on head 7d36ce7 are pending. Last round: software-craft NOT APPROVED on 9d04cc8 (fixed in 7d36ce7); acceptance NOT APPROVED (docstring and record wording, fixed in 7d36ce7); domain NOT APPROVED (judge raw output, fixed in 7d36ce7; schema finding was a false positive, no schema change on this branch); architecture APPROVED.",
     "Contract-shape tag: DECIDED by operator, @contract-shape: form (DECISIONS 2026-11-24).",
     "RED evidence: DECIDED by operator, gap accepted and recorded (DECISIONS 2026-11-24).",
     "JWT segment cap 2048: DECIDED by operator, residual risk accepted (DECISIONS 2026-11-24).",
@@ -86,9 +92,8 @@
     "Historical backfill: DECIDED by operator, not backfilled, recorded (DECISIONS 2026-11-24).",
     "GWT-62.5 Modal tool env: DECIDED by operator, accepted with caveat (DECISIONS 2026-11-24).",
     "Allowlist: .omc/ exclusion is unanchored by operator decision; tripwire test added.",
-    "CI: Repo lint failed on markdownlint MD037 (CHANGELOG underscores); fixed in bf691d4; all PR checks pass.",
-    "Reviewer approvals on head bf691d4 are pending (last round NOT APPROVED on fef2e34).",
-    "/verify-slice (user-invoked) is pending after reviewer approvals."
+    "/verify-slice (user-invoked) is pending after reviewer approvals.",
+    "ASCII-only secret matching: pending operator confirmation (DECISIONS 2026-11-24)."
   ],
   "verdict": "BLOCKED",
   "spec_path": "docs/plan/slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md"
