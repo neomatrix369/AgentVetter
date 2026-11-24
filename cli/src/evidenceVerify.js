@@ -35,9 +35,9 @@ const SECRET_RULES = [
   { re: /\b(sk|rk)[_-](live|test)[_-][A-Za-z0-9]{8,}\b/gi, to: '[REDACTED_KEY]' },
   { re: new RegExp(String.raw`password["']?[${SECRET_WS}]*[:=][${SECRET_WS}]*${SECRET_VALUE}`, 'gi'), to: 'password=[REDACTED]' },
   { re: /(?<![A-Za-z0-9])eyJ[A-Za-z0-9_-]{5,2048}\.[A-Za-z0-9_-]{5,2048}\.[A-Za-z0-9_-]{5,2048}/g, to: '[REDACTED]' },
-  { re: new RegExp(String.raw`\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|rediss?|amqps?):\/\/[^${SECRET_WS}'"<>]+`, 'gi'), to: '[REDACTED]' },
-  { re: new RegExp(String.raw`\b(?:FlyV1[${SECRET_WS}]+)?(?:fo1|fm2)_[A-Za-z0-9_-]{16,}\b|\bcf(?:ut|at|k)_[A-Za-z0-9]{40,}\b`, 'g'), to: '[REDACTED]' },
-  { re: new RegExp(String.raw`\bnetlify[_-]?(?:auth[_-]?)?token["']?[${SECRET_WS}]*[:=][${SECRET_WS}]*${SECRET_VALUE}`, 'gi'), to: 'netlify_token=[REDACTED]' },
+  { re: new RegExp(String.raw`(?<![A-Za-z0-9])(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|rediss?|amqps?):\/\/[^${SECRET_WS}'"<>]+`, 'gi'), to: '[REDACTED]' },
+  { re: new RegExp(String.raw`(?<![A-Za-z0-9])(?:FlyV1[${SECRET_WS}]+)?(?:fo1|fm2)_[A-Za-z0-9_-]{16,}\b|(?<![A-Za-z0-9])cf(?:ut|at|k)_[A-Za-z0-9]{40,}\b`, 'g'), to: '[REDACTED]' },
+  { re: new RegExp(String.raw`(?<![A-Za-z0-9])netlify[_-]?(?:auth[_-]?)?token["']?[${SECRET_WS}]*[:=][${SECRET_WS}]*${SECRET_VALUE}`, 'gi'), to: 'netlify_token=[REDACTED]' },
 ];
 
 function isInsideRoot(root, candidate) {

@@ -276,8 +276,24 @@ def test_given_connection_uri_when_redacted_then_whole_uri_is_masked(scheme_and_
             "deploy NETLIFY_AUTH_TOKEN=" + FAKE_NETLIFY + " end",
             "deploy netlify_token=[REDACTED] end",
         ),
+        (
+            "deploy DEPLOY_NETLIFY_AUTH_TOKEN=" + FAKE_NETLIFY + " end",
+            "deploy DEPLOY_netlify_token=[REDACTED] end",
+        ),
+        ("tag X_fm2_AbCdEf0123456789XyZ end", "tag X_[REDACTED] end"),
+        ("tag X_cfut_" + CF_BODY + "k1l2m3 end", "tag X_[REDACTED] end"),
     ],
-    ids=["cf-user", "cf-account", "cf-global", "fly-fm2", "fly-fo1", "netlify-labelled"],
+    ids=[
+        "cf-user",
+        "cf-account",
+        "cf-global",
+        "fly-fm2",
+        "fly-fo1",
+        "netlify-labelled",
+        "netlify-underscore-prefix",
+        "fly-underscore-prefix",
+        "cf-underscore-prefix",
+    ],
 )
 def test_given_service_token_in_amended_format_when_redacted_then_token_is_masked(
     text: str, expected: str
@@ -363,7 +379,7 @@ def test_given_jwt_in_evidence_row_when_redact_row_then_snippet_is_masked() -> N
 
 
 def test_given_adversarial_jwt_like_run_when_redacted_then_it_finishes_quickly() -> None:
-    """Scenario: a long run of JWT-like fragments is scanned in linear time (no ReDoS).
+    """Scenario: a long run of JWT-like fragments is scanned within a bounded time (per-start cost is capped, not linear).
 
     Slice: 79 security hardening (review follow-up, JWT rule).
     @contract-shape:pure-function

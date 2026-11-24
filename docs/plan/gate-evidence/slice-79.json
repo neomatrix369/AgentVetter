@@ -54,6 +54,10 @@
     {
       "cmd": "env -i HOME PATH LANG ./scripts/setup-modal.sh --non-interactive (clean-env rerun)",
       "result": "exit 0; secrets synced; agentvetter-scan redeployed. CAVEAT: python-dotenv was installed into the Modal CLI tool env earlier (no other changes); the tool env is not pristine and env -i does not reset it. Needs operator decision."
+    },
+    {
+      "cmd": "JWT rule timing at 1 MB (adversarial)",
+      "result": "Python: 0.91 s dash-run, 0.07 s dotted. JS: 2.70 s dash-run, 0.01 s dotted. Bounded (segments capped at 2048), not linear. Residual: a 1 MB dash-run costs seconds. Operator decision: lower the cap (misses long JWT segments) or accept."
     }
   ],
   "coverage_by_gwt": {
@@ -70,10 +74,14 @@
     "nw-ddd-architect-reviewer": "APPROVED: no schema or domain change."
   },
   "open_items": [
-    "GWT-62.5: operator to accept the non-pristine Modal tool env or rerun on a fresh tool env.",
-    "JWT segments longer than 2048 characters are not masked. Operator to accept as residual risk (record in DECISIONS) or lift the cap.",
+    "Contract-shape tag form: reviewers disagree (CONTRACT_SHAPE vs @contract-shape). Operator to confirm the checker's form.",
+    "RED evidence: only the JWT dash/underscore boundary has a recorded RED run. Operator to accept the gap or waive it.",
+    "JWT timing: bounded, 2.7 s at 1 MB in JS. Operator to accept or lower the segment cap.",
+    "JWT segments over 2048 characters are not masked. Operator to accept (DECISIONS row) or lift the cap.",
     "Historical rows are not backfilled for the new patterns. Operator to accept (DECISIONS row) or open a backfill slice.",
-    "Reviewer round on the final head (software-crafter, architect results pending at time of writing).",
+    "GWT-62.5: Modal tool env was not pristine. Operator to accept or rerun on a fresh tool env.",
+    "Allowlist: .omc/ exclusion is unanchored by operator decision; tripwire test added.",
+    "Reviewer approvals on the final head are pending; all four reviewers returned NOT APPROVED on fef2e34.",
     "/verify-slice after the above."
   ],
   "verdict": "BLOCKED",

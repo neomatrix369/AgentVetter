@@ -542,6 +542,9 @@ test('given service tokens in the amended formats when maskSecrets then each is 
     ['token FlyV1 fm2_AbCdEf0123456789XyZ end', 'token [REDACTED] end'],
     ['token fo1_AbCdEf0123456789XyZ0123 end', 'token [REDACTED] end'],
     ['deploy NETLIFY_AUTH_TOKEN=' + netlify + ' end', 'deploy netlify_token=[REDACTED] end'],
+    ['deploy DEPLOY_NETLIFY_AUTH_TOKEN=' + netlify + ' end', 'deploy DEPLOY_netlify_token=[REDACTED] end'],
+    ['tag X_fm2_AbCdEf0123456789XyZ end', 'tag X_[REDACTED] end'],
+    ['tag X_cfut_' + cfBody + ' end', 'tag X_[REDACTED] end'],
   ];
   for (const [input, expected] of cases) {
     assert.equal(maskSecrets(input).text, expected, input);
@@ -595,7 +598,7 @@ test('given Unicode boundary and spacing cases when maskSecrets then results mat
 
 test('given an adversarial JWT-like run when maskSecrets then it finishes quickly', () => {
   /**
-   * Scenario: a long run of JWT-like fragments is scanned in linear time (no ReDoS).
+   * Scenario: a long run of JWT-like fragments is scanned within a bounded time (per-start cost is capped, not linear).
    * Slice: 79 security hardening (review follow-up, JWT rule).
    * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
@@ -610,5 +613,5 @@ test('given an adversarial JWT-like run when maskSecrets then it finishes quickl
   const started = performance.now();
   maskSecrets(text);
   maskSecrets(dotted);
-  assert.ok(performance.now() - started < 2000, 'redaction must stay linear');
+  assert.ok(performance.now() - started < 2000, 'redaction must stay within the bounded budget');
 });

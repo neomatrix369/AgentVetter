@@ -59,7 +59,7 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     ),
     (
         re.compile(
-            r"\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|rediss?|amqps?)://[^"
+            r"(?<![A-Za-z0-9])(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|rediss?|amqps?)://[^"
             + _SECRET_WS
             + r"'\"<>]+",
             re.IGNORECASE | re.ASCII,
@@ -68,16 +68,16 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     ),
     (
         re.compile(
-            r"\b(?:FlyV1["
+            r"(?<![A-Za-z0-9])(?:FlyV1["
             + _SECRET_WS
-            + r"]+)?(?:fo1|fm2)_[A-Za-z0-9_-]{16,}\b|\bcf(?:ut|at|k)_[A-Za-z0-9]{40,}\b",
+            + r"]+)?(?:fo1|fm2)_[A-Za-z0-9_-]{16,}\b|(?<![A-Za-z0-9])cf(?:ut|at|k)_[A-Za-z0-9]{40,}\b",
             re.ASCII,
         ),
         "[REDACTED]",
     ),
     (
         re.compile(
-            r"\bnetlify[_-]?(?:auth[_-]?)?token[\"']?["
+            r"(?<![A-Za-z0-9])netlify[_-]?(?:auth[_-]?)?token[\"']?["
             + _SECRET_WS
             + r"]*[:=]["
             + _SECRET_WS
