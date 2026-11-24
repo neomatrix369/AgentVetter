@@ -2,18 +2,18 @@
   "slice": "slice-79-security-hardening",
   "date": "2026-11-24",
   "branch": "slice/79-security-hardening",
-  "commit": "acf18c3",
+  "commit": "9c41d33",
   "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23); GWT-62.3 amended 2026-11-24 to documented Cloudflare prefixes",
   "commands": [
     {
-      "cmd": "uv run pytest sandbox/tests",
-      "result": "392 passed (includes redact unit, redact_row write-path, adversarial timing test)",
-      "commit": "acf18c3"
+      "cmd": "uv run pytest sandbox/tests --cov=sandbox",
+      "result": "393 passed; coverage 95.51% (gate 95%)",
+      "commit": "9c41d33"
     },
     {
       "cmd": "cd cli && npm test",
-      "result": "245 passed, 0 failed",
-      "commit": "acf18c3"
+      "result": "246 passed, 0 failed",
+      "commit": "9c41d33"
     },
     {
       "cmd": "cd prototypes/dc-dashboard && npm run test:coverage",
@@ -28,8 +28,12 @@
       "result": "exit 0 (.omc/ allowlisted by operator decision)"
     },
     {
+      "cmd": "RED check for JWT boundary (previous regex acf18c3 vs current 9c41d33)",
+      "result": "previous boundary leaked x-auth-<jwt> and jwt_<jwt>; current masks both. Covered by new dash/underscore tests in both suites."
+    },
+    {
       "cmd": "file:// DevTools check on AgentVetter.dc.html (headless Chromium)",
-      "result": "0 CSP violations. Pre-existing: file:// blocks module imports and fetch (CORS); dashboard unchanged by this slice. Second GWT-62.4 clause (Supabase https calls not blocked by in-HTML policy) NOT probed."
+      "result": "0 CSP violations. Second GWT-62.4 clause (Supabase https calls not blocked by in-HTML policy) NOT probed."
     },
     {
       "cmd": "./scripts/setup-supabase.sh (no --force), cloud project",
@@ -37,29 +41,37 @@
     },
     {
       "cmd": "./scripts/setup-modal.sh --non-interactive (operator approved)",
-      "result": "first run exit 1: python-dotenv missing in the Modal CLI tool env (no changes). Installed python-dotenv into that env only; rerun exit 0: synced agentvetter-supabase and agentvetter-scan-secrets, deployed agentvetter-scan from the working tree. The deploy was NOT from a clean environment."
+      "result": "first run exit 1 (python-dotenv missing in Modal CLI tool env, no changes); installed into that env only; rerun exit 0: synced two secrets, deployed agentvetter-scan from working tree. NOT a clean environment."
+    },
+    {
+      "cmd": "WebFetch Cloudflare token-format docs (2026-11-24)",
+      "result": "cfk_/cfut_/cfat_ each followed by 40 characters and a checksum (checksum length not stated); legacy tokens unprefixed (Global key 37-45 hex; user/account 40 alphanumeric). No v1.0- format."
+    },
+    {
+      "cmd": "WebFetch Fly.io token docs (2026-11-24)",
+      "result": "Only fm2_ documented (as 'FlyV1 fm2_...'). fo1_, fm1a_, fm1r_ NOT documented."
     }
   ],
   "coverage_by_gwt": {
-    "GWT-62.1 JWT": "PASS: tests + redact_row write-path test; lookbehind anchored to fix quadratic scan (acf18c3)",
-    "GWT-62.2 DB URIs": "PASS: postgres, mysql, mongodb+srv, mariadb, redis, amqp tested",
-    "GWT-62.3 service tokens (amended)": "PASS for documented forms: cfut_/cfat_/cfk_ (40 chars), 39-char and legacy unprefixed negatives, Fly fo1_/fm2_, labelled Netlify, unlabelled Netlify negative, v1.0- release negative. OPEN: the {40,} threshold and the Fly fm1a_/fm1r_ prefixes are not verified against the Cloudflare and Fly docs (needs re-fetch).",
+    "GWT-62.1 JWT": "PASS: tests, redact_row write-path test, dash/underscore boundary fix with RED evidence (9c41d33); segment length capped at 2048 for linear scan",
+    "GWT-62.2 DB URIs": "PASS: postgres, mysql, mongodb+srv, mariadb, redis, amqp",
+    "GWT-62.3 service tokens (amended)": "PASS for documented forms: cfut_/cfat_/cfk_ (40+ chars, verified against docs), Fly fm2_ (documented), labelled Netlify. Negatives PASS: 39-char, legacy unprefixed Cloudflare, unlabelled Netlify, v1.0- release identifier. OPEN: Fly fo1_ kept though undocumented; operator decision.",
     "GWT-62.4 file:// no CSP": "PARTIAL: CSP violations 0; second clause unprobed",
-    "GWT-62.5 setup scripts": "PARTIAL: Supabase run exit 0; Modal run exit 0 but not in a clean environment (precondition not met); the Given wording needs an amendment or a clean rerun"
+    "GWT-62.5 setup scripts": "PARTIAL: Supabase exit 0; Modal exit 0 but not from a clean environment"
   },
   "reviews": {
-    "nw-software-crafter-reviewer": "CHANGES REQUESTED (earlier diff). Addressed: ReDoS (acf18c3), cfat/cfk and negative tests. Open: Fly prefix and threshold docs check; no TDD execution log for the RED phase (RED was observed in-session for the first batches only).",
-    "nw-acceptance-designer-reviewer": "CHANGES REQUESTED. Addressed in tests and nits (cfat/cfk, negatives, URI schemes, redact_row, spec branch header, redundant gitleaks path). GWT-62.4 second clause and GWT-62.5 clean-environment precondition remain open.",
-    "nw-solution-architect-reviewer": "APPROVED with non-blocking notes: parity by convention only; llm-usage-tracking.md has a third redaction design; decision for narrowed GWT-62.3 not recorded in DECISIONS.md; .gitleaks .omc/ allowlist broader than needed (operator decision).",
-    "nw-ddd-architect-reviewer": "APPROVED: no schema or domain change; EVIDENCE_FIELDS unchanged."
+    "nw-software-crafter-reviewer": "Round 2 CHANGES REQUESTED. Addressed: JWT boundary (9c41d33, RED evidence), cfat/cfk and negatives. Open: test count 15 Python / 11 JS vs the 2x-GWT budget of 10 (consolidate or justify); no execution log for earlier RED batches.",
+    "nw-acceptance-designer-reviewer": "Round 2 CHANGES REQUESTED. Addressed: @contract-shape:bounded-change tags, stale scenario names renamed, spec provenance recorded. Open by design: GWT-62.4 second clause, GWT-62.5 clean environment.",
+    "nw-solution-architect-reviewer": "APPROVED with non-blocking notes (parity by convention only; llm-usage-tracking.md third redaction design; gitleaks allowlist breadth).",
+    "nw-ddd-architect-reviewer": "APPROVED: no schema or domain change."
   },
   "open_items": [
-    "Verify Cloudflare {40,} length and prefixes, and Fly fm1a_/fm1r_, against the official docs (re-fetch required).",
-    "GWT-62.4: probe the second clause (Supabase https calls not blocked by an in-HTML policy), or mark it open.",
-    "GWT-62.5: rerun in a clean environment, or amend the Given to match the run performed.",
-    "Record the GWT-62.3 narrowing (unlabelled Netlify, legacy Cloudflare not masked) and the .omc/ allowlist in docs/plan/DECISIONS.md.",
-    "Re-submit to nw-software-crafter-reviewer and nw-acceptance-designer-reviewer for approval on acf18c3.",
-    "Run /verify-slice after the above."
+    "Operator decision: keep or drop Fly fo1_ (undocumented).",
+    "Test budget: consolidate Python/JS cases with parametrisation, or justify (15/11 vs 10).",
+    "GWT-62.4: probe the second clause, or mark it open.",
+    "GWT-62.5: clean-environment rerun, or amend the Given to match the run performed.",
+    "Reviewer round 3 on 9c41d33 (software-crafter and acceptance-designer) if approval is required before merge.",
+    "/verify-slice after the above."
   ],
   "verdict": "BLOCKED",
   "spec_path": "docs/plan/slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md"
