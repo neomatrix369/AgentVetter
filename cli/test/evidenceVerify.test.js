@@ -516,7 +516,7 @@ test('given a git SHA and a dotted module path when maskSecrets then the text is
   assert.equal(maskSecrets(text).text, text);
 });
 
-test('given a labelled Netlify token when maskSecrets then the value is masked and the label kept', () => {
+test('given a labelled Netlify token when maskSecrets then the value is masked and the label normalised to netlify_token', () => {
   /**
    * Scenario: a Netlify token next to its label is masked, mirroring the sandbox.
    * Slice: 79 security hardening (GWT-62.3, Netlify).
@@ -525,11 +525,43 @@ test('given a labelled Netlify token when maskSecrets then the value is masked a
    *
    * Given a Netlify token written after its NETLIFY_AUTH_TOKEN label,
    * When maskSecrets runs,
-   * Then the value is replaced and the label is kept.
+   * Then the value is replaced and the label is normalised to netlify_token.
    */
   // -- Given / When / Then --
   const value = 'abcdefghijklmnop' + '12345';
   const out = maskSecrets(`deploy NETLIFY_AUTH_TOKEN=${value} end`).text;
   assert.ok(!out.includes(value), 'raw Netlify token must not appear');
   assert.equal(out, 'deploy netlify_token=[REDACTED] end');
+});
+
+test('given a non-ASCII letter before a Netlify label when maskSecrets then the value is masked', () => {
+  /**
+   * Scenario: a Netlify label after a non-ASCII letter is still masked, as in the sandbox.
+   * Slice: 79 security hardening (review follow-up, GWT-62.3).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a non-ASCII letter directly before NETLIFY_AUTH_TOKEN=<value>,
+   * When maskSecrets runs,
+   * Then the value is masked and the letter is kept.
+   */
+  // -- Given / When / Then --
+  const value = 'abcdefghijklmnop' + '12345';
+  assert.equal(maskSecrets('\u00e9NETLIFY_AUTH_TOKEN=' + value).text, '\u00e9netlify_token=[REDACTED]');
+});
+
+test('given non-breaking spaces in a URI and a Fly token when maskSecrets then only the token is masked', () => {
+  /**
+   * Scenario: Unicode spaces end a connection string and separate a Fly token label, matching the sandbox.
+   * Slice: 79 security hardening (review follow-up, parity).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a connection string and a Fly token separated by non-breaking spaces,
+   * When maskSecrets runs,
+   * Then the output keeps the separators and masks both credentials.
+   */
+  // -- Given / When / Then --
+  const text = 'dsn=postgresql://app:pw@h/x\u00a0end FlyV1\u00a0fm2_AbCdEf0123456789XyZ';
+  assert.equal(maskSecrets(text).text, 'dsn=[REDACTED]\u00a0end [REDACTED]');
 });

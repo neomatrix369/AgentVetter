@@ -289,7 +289,7 @@ FAKE_NETLIFY = "abcdefghijklmnop" + "12345"
 
 
 def test_given_labelled_netlify_token_when_redacted_then_value_is_masked() -> None:
-    """Scenario: a Netlify token next to its label is masked; the label is kept.
+    """Scenario: a Netlify token next to its label is masked; the label is normalised to netlify_token.
 
     Slice: 79 security hardening (GWT-62.3, Netlify).
     CONTRACT_SHAPE: bounded-change
@@ -304,3 +304,37 @@ def test_given_labelled_netlify_token_when_redacted_then_value_is_masked() -> No
     ### Then
     assert FAKE_NETLIFY not in out
     assert out == "deploy netlify_token=[REDACTED] end"
+
+
+def test_given_non_ascii_letter_before_netlify_label_when_redacted_then_value_is_masked() -> None:
+    """Scenario: a Netlify label after a non-ASCII letter is still masked, as in the CLI.
+
+    Slice: 79 security hardening (review follow-up, GWT-62.3).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    text = "\u00e9" + "NETLIFY_AUTH_TOKEN=" + FAKE_NETLIFY
+
+    ### When
+    out = redact.redact_secrets(text)
+
+    ### Then
+    assert FAKE_NETLIFY not in out
+    assert out == "\u00e9netlify_token=[REDACTED]"
+
+
+def test_given_non_breaking_space_in_uri_and_fly_token_when_redacted_then_only_the_token_is_masked() -> (
+    None
+):
+    """Scenario: Unicode spaces end a connection string and separate a Fly token label the same way in both languages.
+
+    Slice: 79 security hardening (review follow-up, parity).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    ### Given
+    text = "dsn=postgresql://app:pw@h/x\u00a0end FlyV1\u00a0fm2_AbCdEf0123456789XyZ"
+
+    ### When / Then
+    assert redact.redact_secrets(text) == "dsn=[REDACTED]\u00a0end [REDACTED]"
