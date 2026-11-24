@@ -27,7 +27,7 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     ),
     (
         re.compile(
-            r"(?<![A-Za-z0-9])(sk-|sk-ant-|ospy_|tsi_|dashscope)[A-Za-z0-9_-]{8,}\b",
+            r"(?<![A-Za-z0-9])(sk-|sk-ant-|ospy_|tsi_|dashscope)[A-Za-z0-9_-]{8,}(?![A-Za-z0-9])",
             re.IGNORECASE | re.ASCII,
         ),
         "[REDACTED_KEY]",
@@ -39,12 +39,19 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
         ),
         "api_key=[REDACTED]",
     ),
-    (re.compile(r"(?<![A-Za-z0-9])gh[pousr]_[A-Za-z0-9]{20,}\b", re.ASCII), "[REDACTED_TOKEN]"),
-    (re.compile(r"(?<![A-Za-z0-9])github_pat_[A-Za-z0-9_]{20,}\b", re.ASCII), "[REDACTED_TOKEN]"),
-    (re.compile(r"(?<![A-Za-z0-9])AKIA[0-9A-Z]{16}\b", re.ASCII), "[REDACTED_TOKEN]"),
+    (
+        re.compile(r"(?<![A-Za-z0-9])gh[pousr]_[A-Za-z0-9]{20,}(?![A-Za-z0-9])", re.ASCII),
+        "[REDACTED_TOKEN]",
+    ),
+    (
+        re.compile(r"(?<![A-Za-z0-9])github_pat_[A-Za-z0-9_]{20,}(?![A-Za-z0-9])", re.ASCII),
+        "[REDACTED_TOKEN]",
+    ),
+    (re.compile(r"(?<![A-Za-z0-9])AKIA[0-9A-Z]{16}(?![A-Za-z0-9])", re.ASCII), "[REDACTED_TOKEN]"),
     (
         re.compile(
-            r"(?<![A-Za-z0-9])(sk|rk)[_-](live|test)[_-][A-Za-z0-9]{8,}\b", re.IGNORECASE | re.ASCII
+            r"(?<![A-Za-z0-9])(sk|rk)[_-](live|test)[_-][A-Za-z0-9]{8,}(?![A-Za-z0-9])",
+            re.IGNORECASE | re.ASCII,
         ),
         "[REDACTED_KEY]",
     ),
@@ -75,7 +82,7 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
         re.compile(
             r"(?<![A-Za-z0-9])(?:FlyV1["
             + _SECRET_WS
-            + r"]+)?(?:fo1|fm2)_[A-Za-z0-9_-]{16,}\b|(?<![A-Za-z0-9])cf(?:ut|at|k)_[A-Za-z0-9]{40,}\b",
+            + r"]+)?(?:fo1|fm2)_[A-Za-z0-9_-]{16,}(?![A-Za-z0-9])|(?<![A-Za-z0-9])cf(?:ut|at|k)_[A-Za-z0-9]{40,}(?![A-Za-z0-9])",
             re.ASCII,
         ),
         "[REDACTED]",

@@ -10,8 +10,14 @@
 import { getSupabase } from './supabaseClient.js';
 import {
   formatUntrustedForPrompt,
+  maskSecrets,
   wrapUntrustedContent,
 } from './evidenceVerify.js';
+
+/** Raw model output can quote scanned content, so it is masked before it is stored. */
+function maskRaw(text) {
+  return text == null ? null : maskSecrets(text).text;
+}
 
 export const PROMPT_VERSION = 'judge-panel-v1';
 export const TARGET_JUDGE_COUNT = 3;
@@ -339,7 +345,7 @@ function buildPanelRun(candidate, judgements, finalJudge, inventory, nowFn) {
     final_confidence: finalJudge.confidence,
     final_reason: finalJudge.reason,
     final_model: finalJudge.model,
-    final_raw_response: finalJudge.raw_response,
+    final_raw_response: maskRaw(finalJudge.raw_response),
     prompt_version: PROMPT_VERSION,
     sie_run_id: finalJudge.run_id,
     inventory_note: inventory.inventory_note,
@@ -464,7 +470,7 @@ export async function persistPanelRun(supabase, panelRun) {
       verdict: j.verdict ?? null,
       confidence: j.confidence ?? null,
       reason: j.reason ?? null,
-      raw_response: j.raw_response ?? null,
+      raw_response: maskRaw(j.raw_response),
       prompt_version: j.prompt_version ?? null,
       run_id: j.run_id ?? null,
       status: j.status,

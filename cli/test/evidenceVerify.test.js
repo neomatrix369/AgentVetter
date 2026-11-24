@@ -594,13 +594,15 @@ test('given tokens attached to a word by an underscore when maskSecrets then eac
     ['tag X_ghp_' + 'a'.repeat(36) + ' end', 'tag X_[REDACTED_TOKEN] end'],
     ['tag KEY_sk_live_' + 'a'.repeat(12) + ' end', 'tag KEY_[REDACTED_KEY] end'],
     ['tag X_AKIA' + 'A'.repeat(16) + ' end', 'tag X_[REDACTED_TOKEN] end'],
+    ['tag ghp_' + 'a'.repeat(36) + '_end', 'tag [REDACTED_TOKEN]_end'],
+    ['tag AKIA' + 'A'.repeat(16) + '_x', 'tag [REDACTED_TOKEN]_x'],
   ];
   for (const [input, expected] of cases) {
     assert.equal(maskSecrets(input).text, expected, input);
   }
 });
 
-test('given Unicode boundary and spacing cases when maskSecrets then results match the sandbox', () => {
+test('given Unicode boundary and spacing cases when maskSecrets then results follow the pinned expectations', () => {
   /**
    * Scenario: non-ASCII letters and Unicode spaces are handled the same way in the CLI and the sandbox.
    * Slice: 79 security hardening (review follow-up, parity).
@@ -609,7 +611,7 @@ test('given Unicode boundary and spacing cases when maskSecrets then results mat
    *
    * Given a Netlify label after a non-ASCII letter and a URI and Fly token separated by non-breaking spaces,
    * When maskSecrets runs,
-   * Then both outputs match the sandbox expectations.
+   * Then both outputs equal the pinned expectations.
    */
   // -- Given / When / Then --
   const netlify = 'abcdefghijklmnop' + '12345';
@@ -622,7 +624,7 @@ test('given Unicode boundary and spacing cases when maskSecrets then results mat
 
 test('given an adversarial JWT-like run when maskSecrets then it finishes quickly', () => {
   /**
-   * Scenario: a long run of JWT-like fragments is scanned within a bounded time (per-start cost is capped, not linear).
+   * Scenario: a long run of JWT-like fragments is scanned within a bounded time (per-start cost is capped, so total cost is linear).
    * Slice: 79 security hardening (review follow-up, JWT rule).
    * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values

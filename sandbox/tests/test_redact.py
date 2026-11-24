@@ -314,8 +314,16 @@ def test_given_service_token_in_amended_format_when_redacted_then_token_is_maske
         ("tag X_ghp_" + "a" * 36 + " end", "tag X_[REDACTED_TOKEN] end"),
         ("tag KEY_sk_live_" + "a" * 12 + " end", "tag KEY_[REDACTED_KEY] end"),
         ("tag X_AKIA" + "A" * 16 + " end", "tag X_[REDACTED_TOKEN] end"),
+        ("tag ghp_" + "a" * 36 + "_end", "tag [REDACTED_TOKEN]_end"),
+        ("tag AKIA" + "A" * 16 + "_x", "tag [REDACTED_TOKEN]_x"),
     ],
-    ids=["github-underscore-prefix", "stripe-style-underscore-prefix", "aws-underscore-prefix"],
+    ids=[
+        "github-underscore-prefix",
+        "stripe-style-underscore-prefix",
+        "aws-underscore-prefix",
+        "github-underscore-suffix",
+        "aws-underscore-suffix",
+    ],
 )
 def test_given_token_after_underscore_when_redacted_then_token_is_masked(
     text: str, expected: str
@@ -373,7 +381,7 @@ def test_given_shape_outside_the_rules_when_redacted_then_text_is_unchanged(text
     ],
     ids=["non-ascii-before-label", "nbsp-separators"],
 )
-def test_given_unicode_boundary_and_spacing_when_redacted_then_masking_matches_cli(
+def test_given_unicode_boundary_and_spacing_when_redacted_then_masking_is_pinned(
     text: str, expected: str
 ) -> None:
     """Scenario: non-ASCII letters and Unicode spaces are handled the same way in the sandbox and the CLI.
@@ -405,7 +413,7 @@ def test_given_jwt_in_evidence_row_when_redact_row_then_snippet_is_masked() -> N
 
 
 def test_given_adversarial_jwt_like_run_when_redacted_then_it_finishes_quickly() -> None:
-    """Scenario: a long run of JWT-like fragments is scanned within a bounded time (per-start cost is capped, not linear).
+    """Scenario: a long run of JWT-like fragments is scanned within a bounded time (per-start cost is capped, so total cost is linear).
 
     Slice: 79 security hardening (review follow-up, JWT rule).
     @contract-shape:pure-function
