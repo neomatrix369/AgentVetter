@@ -2,7 +2,7 @@
   "slice": "slice-79-security-hardening",
   "date": "2026-11-24",
   "branch": "slice/79-security-hardening",
-  "commit": "7b9e7bf",
+  "commit": "ab2e4ed",
   "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23); GWT-62.3 amended 2026-11-24 to documented Cloudflare prefixes",
   "commands": [
     {
@@ -83,6 +83,11 @@
       "cmd": "cd cli && npm test (GWT-62.6 all-fields test; removed masking to confirm RED, then restored)",
       "result": "243 passed, 0 failed; RED with masking removed (1 fail).",
       "commit": "7b9e7bf"
+    },
+    {
+      "cmd": "uv run pytest sandbox/tests; cd cli && npm test (after glued JWT/URI fix)",
+      "result": "419 passed (sandbox); 243 passed, 0 failed (CLI). Glued xeyJ... and dbxpostgres://... masked on both sides. Timing 200k chars: 0.032 s Python, 0.002 s JS.",
+      "commit": "ab2e4ed"
     }
   ],
   "coverage_by_gwt": {
@@ -109,7 +114,8 @@
     "GWT-62.5 Modal tool env: DECIDED by operator, accepted with caveat (DECISIONS 2026-11-24).",
     "Allowlist: .omc/ exclusion is unanchored by operator decision; tripwire test added.",
     "/verify-slice (user-invoked) is pending after reviewer approvals.",
-    "ASCII-only secret matching and sk- leading boundary: pending operator confirmation (DECISIONS 2026-11-24)."
+    "ASCII-only secret matching and sk- leading boundary: pending operator confirmation (DECISIONS 2026-11-24).",
+    "Glued JWT and DB URI: FIXED in ab2e4ed (DECISIONS 2026-11-24 closing row)."
   ],
   "verdict": "BLOCKED",
   "spec_path": "docs/plan/slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md"
