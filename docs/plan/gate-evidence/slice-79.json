@@ -2,7 +2,7 @@
   "slice": "slice-79-security-hardening",
   "date": "2026-11-24",
   "branch": "slice/79-security-hardening",
-  "commit": "7d36ce7",
+  "commit": "effc94b",
   "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23); GWT-62.3 amended 2026-11-24 to documented Cloudflare prefixes",
   "commands": [
     {
@@ -68,6 +68,11 @@
       "cmd": "uv run pytest sandbox/tests; cd cli && npm test (after trailing-boundary and judge masking fix)",
       "result": "415 passed (sandbox); 241 passed, 0 failed (CLI). Ruff clean. markdownlint v0.43.0 clean. Probes: ghp_<36>_end and AKIA<16>_x masked on both sides.",
       "commit": "7d36ce7"
+    },
+    {
+      "cmd": "uv run pytest sandbox/tests; cd cli && npm test (after fail-open and judge text fix)",
+      "result": "417 passed (sandbox); 241 passed, 0 failed (CLI). Ruff clean. Probes: tokenghp_<36> and keyAKIA<16> masked on both sides; sk- keeps its leading boundary by decision.",
+      "commit": "effc94b"
     }
   ],
   "coverage_by_gwt": {
@@ -84,7 +89,7 @@
     "nw-ddd-architect-reviewer": "APPROVED: no schema or domain change."
   },
   "open_items": [
-    "Reviewer approvals on head 7d36ce7 are pending. Last round: software-craft NOT APPROVED on 9d04cc8 (fixed in 7d36ce7); acceptance NOT APPROVED (docstring and record wording, fixed in 7d36ce7); domain NOT APPROVED (judge raw output, fixed in 7d36ce7; schema finding was a false positive, no schema change on this branch); architecture APPROVED.",
+    "Reviewer approvals on head effc94b are pending. Round 3 (on c1cd07f): software-craft NOT APPROVED (judge text and fail-open boundary, fixed in effc94b); acceptance NOT APPROVED (parity docstrings, fixed in effc94b); domain NOT APPROVED (judge reason, fixed in effc94b); architecture APPROVED on 9d04cc8.",
     "Contract-shape tag: DECIDED by operator, @contract-shape: form (DECISIONS 2026-11-24).",
     "RED evidence: DECIDED by operator, gap accepted and recorded (DECISIONS 2026-11-24).",
     "JWT segment cap 2048: DECIDED by operator, residual risk accepted (DECISIONS 2026-11-24).",
