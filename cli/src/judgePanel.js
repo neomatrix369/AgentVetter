@@ -14,8 +14,8 @@ import {
   wrapUntrustedContent,
 } from './evidenceVerify.js';
 
-/** Raw model output can quote scanned content, so it is masked before it is stored. */
-function maskRaw(text) {
+/** Model output and scanner text can quote scanned content, so mask before storing or sending. */
+function maskText(text) {
   return text == null ? null : maskSecrets(text).text;
 }
 
@@ -210,8 +210,8 @@ function buildPanelUserContent(candidate) {
     item: candidateLabel(candidate),
     finding: findingSummary(candidate),
     evidence_status: evidenceStatusOf(candidate),
-    analysis: candidate.analysis || null,
-    escalation: candidate.escalation || candidate.analysis || null,
+    analysis: maskText(candidate.analysis),
+    escalation: maskText(candidate.escalation || candidate.analysis),
     untrusted_content: formatUntrustedForPrompt(wrapped),
   });
 }
@@ -220,8 +220,8 @@ function buildFinalUserContent(candidate, judgements) {
   return JSON.stringify({
     item: candidateLabel(candidate),
     evidence_status: evidenceStatusOf(candidate),
-    analysis: candidate.analysis || null,
-    escalation: candidate.escalation || candidate.analysis || null,
+    analysis: maskText(candidate.analysis),
+    escalation: maskText(candidate.escalation || candidate.analysis),
     panel_judgements: judgements.map((j) => ({
       slot: j.slot,
       model: j.model,
@@ -343,9 +343,9 @@ function buildPanelRun(candidate, judgements, finalJudge, inventory, nowFn) {
     disagreement: finalJudge.disagreement,
     final_verdict: finalJudge.verdict,
     final_confidence: finalJudge.confidence,
-    final_reason: finalJudge.reason,
+    final_reason: maskText(finalJudge.reason),
     final_model: finalJudge.model,
-    final_raw_response: maskRaw(finalJudge.raw_response),
+    final_raw_response: maskText(finalJudge.raw_response),
     prompt_version: PROMPT_VERSION,
     sie_run_id: finalJudge.run_id,
     inventory_note: inventory.inventory_note,
@@ -469,8 +469,8 @@ export async function persistPanelRun(supabase, panelRun) {
       model: j.model,
       verdict: j.verdict ?? null,
       confidence: j.confidence ?? null,
-      reason: j.reason ?? null,
-      raw_response: maskRaw(j.raw_response),
+      reason: maskText(j.reason),
+      raw_response: maskText(j.raw_response),
       prompt_version: j.prompt_version ?? null,
       run_id: j.run_id ?? null,
       status: j.status,

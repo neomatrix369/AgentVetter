@@ -578,7 +578,7 @@ test('given shapes outside the rules when maskSecrets then the text is unchanged
   }
 });
 
-test('given tokens attached to a word by an underscore when maskSecrets then each token is masked', () => {
+test('given tokens glued to text or joined by an underscore when maskSecrets then each token is masked', () => {
   /**
    * Scenario: GitHub, live-key and AWS tokens attached to a word by an underscore are still masked.
    * Slice: 79 security hardening (GWT-62.3, underscore boundary).
@@ -596,6 +596,8 @@ test('given tokens attached to a word by an underscore when maskSecrets then eac
     ['tag X_AKIA' + 'A'.repeat(16) + ' end', 'tag X_[REDACTED_TOKEN] end'],
     ['tag ghp_' + 'a'.repeat(36) + '_end', 'tag [REDACTED_TOKEN]_end'],
     ['tag AKIA' + 'A'.repeat(16) + '_x', 'tag [REDACTED_TOKEN]_x'],
+    ['tag tokenghp_' + 'a'.repeat(36) + ' end', 'tag token[REDACTED_TOKEN] end'],
+    ['tag keyAKIA' + 'A'.repeat(16) + ' end', 'tag key[REDACTED_TOKEN] end'],
   ];
   for (const [input, expected] of cases) {
     assert.equal(maskSecrets(input).text, expected, input);

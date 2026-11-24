@@ -29,14 +29,14 @@ const SECRET_RULES = [
   { re: new RegExp(String.raw`Bearer[${SECRET_WS}]+[^${SECRET_WS}]+`, 'gi'), to: 'Bearer [REDACTED]' },
   { re: /(?<![A-Za-z0-9])(sk-|sk-ant-|ospy_|tsi_|dashscope)[A-Za-z0-9_-]{8,}(?![A-Za-z0-9])/gi, to: '[REDACTED_KEY]' },
   { re: new RegExp(String.raw`api[_-]?key["']?[${SECRET_WS}]*[:=][${SECRET_WS}]*${SECRET_VALUE}`, 'gi'), to: 'api_key=[REDACTED]' },
-  { re: /(?<![A-Za-z0-9])gh[pousr]_[A-Za-z0-9]{20,}(?![A-Za-z0-9])/g, to: '[REDACTED_TOKEN]' },
-  { re: /(?<![A-Za-z0-9])github_pat_[A-Za-z0-9_]{20,}(?![A-Za-z0-9])/g, to: '[REDACTED_TOKEN]' },
-  { re: /(?<![A-Za-z0-9])AKIA[0-9A-Z]{16}(?![A-Za-z0-9])/g, to: '[REDACTED_TOKEN]' },
+  { re: /gh[pousr]_[A-Za-z0-9]{20,}(?![A-Za-z0-9])/g, to: '[REDACTED_TOKEN]' },
+  { re: /github_pat_[A-Za-z0-9_]{20,}(?![A-Za-z0-9])/g, to: '[REDACTED_TOKEN]' },
+  { re: /AKIA[0-9A-Z]{16}(?![A-Za-z0-9])/g, to: '[REDACTED_TOKEN]' },
   { re: /(?<![A-Za-z0-9])(sk|rk)[_-](live|test)[_-][A-Za-z0-9]{8,}(?![A-Za-z0-9])/gi, to: '[REDACTED_KEY]' },
   { re: new RegExp(String.raw`password["']?[${SECRET_WS}]*[:=][${SECRET_WS}]*${SECRET_VALUE}`, 'gi'), to: 'password=[REDACTED]' },
   { re: /(?<![A-Za-z0-9])eyJ[A-Za-z0-9_-]{5,2048}\.[A-Za-z0-9_-]{5,2048}\.[A-Za-z0-9_-]{5,2048}/g, to: '[REDACTED]' },
   { re: new RegExp(String.raw`(?<![A-Za-z0-9])(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|rediss?|amqps?):\/\/[^${SECRET_WS}'"<>]+`, 'gi'), to: '[REDACTED]' },
-  { re: new RegExp(String.raw`(?<![A-Za-z0-9])(?:FlyV1[${SECRET_WS}]+)?(?:fo1|fm2)_[A-Za-z0-9_-]{16,}(?![A-Za-z0-9])|(?<![A-Za-z0-9])cf(?:ut|at|k)_[A-Za-z0-9]{40,}(?![A-Za-z0-9])`, 'g'), to: '[REDACTED]' },
+  { re: new RegExp(String.raw`(?:FlyV1[${SECRET_WS}]+)?(?:fo1|fm2)_[A-Za-z0-9_-]{16,}(?![A-Za-z0-9])|cf(?:ut|at|k)_[A-Za-z0-9]{40,}(?![A-Za-z0-9])`, 'g'), to: '[REDACTED]' },
   { re: new RegExp(String.raw`(?<![A-Za-z0-9])netlify[_-]?(?:auth[_-]?)?token["']?[${SECRET_WS}]*[:=][${SECRET_WS}]*${SECRET_VALUE}`, 'gi'), to: 'netlify_token=[REDACTED]' },
 ];
 

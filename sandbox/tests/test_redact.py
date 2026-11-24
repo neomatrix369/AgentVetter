@@ -155,7 +155,7 @@ def test_given_api_key_spanning_newline_when_redacted_then_whole_value_is_masked
 def test_given_key_after_non_ascii_letter_when_redacted_then_letter_is_kept_and_key_masked() -> (
     None
 ):
-    """Scenario: ASCII word boundaries mask a key after a non-ASCII letter, as the CLI does.
+    """Scenario: ASCII word boundaries mask a key after a non-ASCII letter, pinned to the sandbox expectation (CLI counterpart in cli/test/evidenceVerify.test.js).
 
     Slice: stored-evidence masking (PR #212 review follow-up).
     @contract-shape:pure-function
@@ -171,7 +171,7 @@ def test_given_key_after_non_ascii_letter_when_redacted_then_letter_is_kept_and_
 def test_given_non_breaking_space_after_password_label_when_redacted_then_quoted_value_is_masked() -> (
     None
 ):
-    """Scenario: Unicode whitespace after a label is matched the same way by the CLI and the sandbox.
+    """Scenario: Unicode whitespace after a label is matched by the sandbox (CLI counterpart in cli/test/evidenceVerify.test.js).
 
     Slice: stored-evidence masking (PR #212 review follow-up).
     @contract-shape:pure-function
@@ -187,7 +187,7 @@ def test_given_non_breaking_space_after_password_label_when_redacted_then_quoted
 def test_given_byte_order_mark_as_separator_when_redacted_then_bearer_and_password_are_masked() -> (
     None
 ):
-    """Scenario: a zero-width no-break space counts as whitespace in both the CLI and the sandbox.
+    """Scenario: a zero-width no-break space counts as whitespace in the sandbox (CLI counterpart in cli/test/evidenceVerify.test.js).
 
     Slice: stored-evidence masking (PR #212 review follow-up).
     @contract-shape:pure-function
@@ -316,6 +316,8 @@ def test_given_service_token_in_amended_format_when_redacted_then_token_is_maske
         ("tag X_AKIA" + "A" * 16 + " end", "tag X_[REDACTED_TOKEN] end"),
         ("tag ghp_" + "a" * 36 + "_end", "tag [REDACTED_TOKEN]_end"),
         ("tag AKIA" + "A" * 16 + "_x", "tag [REDACTED_TOKEN]_x"),
+        ("tag tokenghp_" + "a" * 36 + " end", "tag token[REDACTED_TOKEN] end"),
+        ("tag keyAKIA" + "A" * 16 + " end", "tag key[REDACTED_TOKEN] end"),
     ],
     ids=[
         "github-underscore-prefix",
@@ -323,12 +325,14 @@ def test_given_service_token_in_amended_format_when_redacted_then_token_is_maske
         "aws-underscore-prefix",
         "github-underscore-suffix",
         "aws-underscore-suffix",
+        "github-glued-to-word",
+        "aws-glued-to-word",
     ],
 )
-def test_given_token_after_underscore_when_redacted_then_token_is_masked(
+def test_given_token_attached_to_text_when_redacted_then_token_is_masked(
     text: str, expected: str
 ) -> None:
-    """Scenario: GitHub, live-key and AWS tokens attached to a word by an underscore are still masked.
+    """Scenario: GitHub, live-key and AWS tokens are masked even when glued to a word or joined by an underscore.
 
     Slice: 79 security hardening (GWT-62.3, underscore boundary).
     @contract-shape:pure-function
@@ -384,7 +388,7 @@ def test_given_shape_outside_the_rules_when_redacted_then_text_is_unchanged(text
 def test_given_unicode_boundary_and_spacing_when_redacted_then_masking_is_pinned(
     text: str, expected: str
 ) -> None:
-    """Scenario: non-ASCII letters and Unicode spaces are handled the same way in the sandbox and the CLI.
+    """Scenario: non-ASCII letters and Unicode spaces are masked to the pinned sandbox expectation (CLI counterpart in cli/test/evidenceVerify.test.js).
 
     Slice: 79 security hardening (review follow-up, parity).
     @contract-shape:pure-function
