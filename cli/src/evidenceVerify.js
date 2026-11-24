@@ -35,7 +35,7 @@ const SECRET_RULES = [
   { re: /(?<![A-Za-z0-9])(sk|rk)[_-](live|test)[_-][A-Za-z0-9]{8,}(?![A-Za-z0-9])/gi, to: '[REDACTED_KEY]' },
   { re: new RegExp(String.raw`password["']?[${SECRET_WS}]*[:=][${SECRET_WS}]*${SECRET_VALUE}`, 'gi'), to: 'password=[REDACTED]' },
   { re: /eyJ[A-Za-z0-9_-]{5,2048}\.[A-Za-z0-9_-]{5,2048}\.[A-Za-z0-9_-]{5,2048}/g, to: '[REDACTED]' },
-  { re: new RegExp(String.raw`(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|rediss?|amqps?):\/\/[^${SECRET_WS}'"<>]+`, 'gi'), to: '[REDACTED]' },
+  { re: new RegExp(String.raw`(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|rediss?|amqps?)(?:\+[A-Za-z0-9_]+)?:\/\/[^${SECRET_WS}'"<>]+`, 'gi'), to: '[REDACTED]' },
   { re: new RegExp(String.raw`(?:FlyV1[${SECRET_WS}]+)?(?:fo1|fm2)_[A-Za-z0-9_-]{16,}(?![A-Za-z0-9])|cf(?:ut|at|k)_[A-Za-z0-9]{40,}(?![A-Za-z0-9])`, 'g'), to: '[REDACTED]' },
   { re: new RegExp(String.raw`(?<![A-Za-z0-9])netlify[_-]?(?:auth[_-]?)?token["']?[${SECRET_WS}]*[:=][${SECRET_WS}]*${SECRET_VALUE}`, 'gi'), to: 'netlify_token=[REDACTED]' },
 ];

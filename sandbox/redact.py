@@ -71,7 +71,7 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     ),
     (
         re.compile(
-            r"(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|rediss?|amqps?)://[^"
+            r"(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|rediss?|amqps?)(?:\+[A-Za-z0-9_]+)?://[^"
             + _SECRET_WS
             + r"'\"<>]+",
             re.IGNORECASE | re.ASCII,
