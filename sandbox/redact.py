@@ -51,7 +51,10 @@ _SECRET_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
         "password=[REDACTED]",
     ),
     (
-        re.compile(r"\beyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}", re.ASCII),
+        re.compile(
+            r"(?<![A-Za-z0-9_-])eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}",
+            re.ASCII,
+        ),
         "[REDACTED]",
     ),
     (

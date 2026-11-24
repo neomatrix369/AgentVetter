@@ -651,3 +651,21 @@ test('given mariadb, redis and amqp URIs when maskSecrets then each is masked', 
     assert.equal(maskSecrets(`dsn=${uri} end`).text, 'dsn=[REDACTED] end', uri);
   }
 });
+
+test('given an adversarial JWT-like run when maskSecrets then it finishes quickly', () => {
+  /**
+   * Scenario: a long run of JWT-like fragments is scanned in linear time (no ReDoS).
+   * Slice: 79 security hardening (review follow-up, JWT rule).
+   * CONTRACT_SHAPE: bounded-change
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a long run of eyJ- fragments with no dots,
+   * When maskSecrets runs,
+   * Then it finishes within two seconds.
+   */
+  // -- Given / When / Then --
+  const text = 'eyJ-'.repeat(5000);
+  const started = performance.now();
+  maskSecrets(text);
+  assert.ok(performance.now() - started < 2000, 'redaction must stay linear');
+});

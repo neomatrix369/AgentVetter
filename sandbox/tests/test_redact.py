@@ -451,3 +451,24 @@ def test_given_jwt_in_evidence_row_when_redact_row_then_snippet_is_masked() -> N
     assert jwt not in out["snippet"]
     assert out["snippet"] == "auth=[REDACTED]"
     assert out["scanner_source"] == "Snyk"
+
+
+def test_given_adversarial_jwt_like_run_when_redacted_then_it_finishes_quickly() -> None:
+    """Scenario: a long run of JWT-like fragments is scanned in linear time (no ReDoS).
+
+    Slice: 79 security hardening (review follow-up, JWT rule).
+    CONTRACT_SHAPE: bounded-change
+    Outcome anchor: Stored evidence never carries raw secret-looking values
+    """
+    import time
+
+    ### Given
+    text = "eyJ-" * 5000
+
+    ### When
+    started = time.perf_counter()
+    redact.redact_secrets(text)
+    elapsed = time.perf_counter() - started
+
+    ### Then
+    assert elapsed < 2.0, f"redaction took {elapsed:.2f}s"
