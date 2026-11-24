@@ -74,6 +74,12 @@
 **When** run in a clean environment
 **Then** both complete without errors introduced by slice 79 changes
 
+### GWT-62.6 — Judge panel text masked before storage and outbound calls
+**Given** a judge panel run whose model output or scanner text quotes a secret-looking value
+**When** the run is persisted or sent to the SIE endpoint
+**Then** the judge reason, raw response, error message, finding message, analysis and escalation fields are masked
+**And** `file_path` and `location` are left unmasked (paths, not scanned text)
+
 ## Local compatibility checklist [GATE]
 - [ ] `python3 -c "import sandbox.redact"` exits 0
 - [ ] `prototypes/dc-dashboard/AgentVetter.dc.html` opens via `file://`; no CSP errors in DevTools

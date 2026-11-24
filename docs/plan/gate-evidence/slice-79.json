@@ -2,7 +2,7 @@
   "slice": "slice-79-security-hardening",
   "date": "2026-11-24",
   "branch": "slice/79-security-hardening",
-  "commit": "effc94b",
+  "commit": "2a25385",
   "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23); GWT-62.3 amended 2026-11-24 to documented Cloudflare prefixes",
   "commands": [
     {
@@ -73,6 +73,11 @@
       "cmd": "uv run pytest sandbox/tests; cd cli && npm test (after fail-open and judge text fix)",
       "result": "417 passed (sandbox); 241 passed, 0 failed (CLI). Ruff clean. Probes: tokenghp_<36> and keyAKIA<16> masked on both sides; sk- keeps its leading boundary by decision.",
       "commit": "effc94b"
+    },
+    {
+      "cmd": "uv run pytest sandbox/tests; cd cli && npm test (at 2a25385)",
+      "result": "417 passed (sandbox); 242 passed, 0 failed (CLI). Ruff clean. markdownlint v0.43.0 clean.",
+      "commit": "2a25385"
     }
   ],
   "coverage_by_gwt": {
@@ -80,7 +85,8 @@
     "GWT-62.2 DB URIs": "PASS: postgres, mysql, mongodb+srv, mariadb, redis, amqp",
     "GWT-62.3 service tokens (amended)": "PASS for documented forms: cfut_/cfat_/cfk_ (40+ chars, verified against docs), Fly fm2_ (documented), labelled Netlify. Negatives PASS: 39-char, legacy unprefixed Cloudflare, unlabelled Netlify, v1.0- release identifier. OPEN: Fly fo1_ kept though undocumented; operator decision.",
     "GWT-62.4 file:// no CSP": "PASS: 0 CSP violations; second clause probed: file:// page fetch to the Supabase origin returned HTTP 401 (reached server), no CSP refusal logged",
-    "GWT-62.5 setup scripts": "PARTIAL: Supabase exit 0 (ready, no-op). Modal exit 0 in env -i, but the Modal tool env was not pristine (python-dotenv installed manually). Not a clean PASS until the operator accepts or reruns on a fresh tool env."
+    "GWT-62.5 setup scripts": "PARTIAL: Supabase exit 0 (ready, no-op). Modal exit 0 in env -i, but the Modal tool env was not pristine (python-dotenv installed manually). Not a clean PASS until the operator accepts or reruns on a fresh tool env.",
+    "GWT-62.6 judge text": "PARTIAL: stored judge reason and raw response are tested (cli/test/judgePanel.test.js asserts no raw token in any inserted row). Error message, finding message, analysis, escalation and final reason are masked in code (judgePanel.js) but have no individual test."
   },
   "reviews": {
     "nw-software-crafter-reviewer": "Round 2 CHANGES REQUESTED. Addressed: JWT boundary (9c41d33, RED evidence), cfat/cfk and negatives. Open: test count 15 Python / 11 JS vs the 2x-GWT budget of 10 (consolidate or justify); no execution log for earlier RED batches.",
@@ -89,7 +95,7 @@
     "nw-ddd-architect-reviewer": "APPROVED: no schema or domain change."
   },
   "open_items": [
-    "Reviewer approvals on head effc94b are pending. Round 3 (on c1cd07f): software-craft NOT APPROVED (judge text and fail-open boundary, fixed in effc94b); acceptance NOT APPROVED (parity docstrings, fixed in effc94b); domain NOT APPROVED (judge reason, fixed in effc94b); architecture APPROVED on 9d04cc8.",
+    "Reviewer approvals on head 2a25385: software-craft APPROVED; domain APPROVED; architecture and acceptance NOT APPROVED on record wording only (fixed in the following commit); re-review pending.",
     "Contract-shape tag: DECIDED by operator, @contract-shape: form (DECISIONS 2026-11-24).",
     "RED evidence: DECIDED by operator, gap accepted and recorded (DECISIONS 2026-11-24).",
     "JWT segment cap 2048: DECIDED by operator, residual risk accepted (DECISIONS 2026-11-24).",
@@ -98,7 +104,7 @@
     "GWT-62.5 Modal tool env: DECIDED by operator, accepted with caveat (DECISIONS 2026-11-24).",
     "Allowlist: .omc/ exclusion is unanchored by operator decision; tripwire test added.",
     "/verify-slice (user-invoked) is pending after reviewer approvals.",
-    "ASCII-only secret matching: pending operator confirmation (DECISIONS 2026-11-24)."
+    "ASCII-only secret matching and sk- leading boundary: pending operator confirmation (DECISIONS 2026-11-24)."
   ],
   "verdict": "BLOCKED",
   "spec_path": "docs/plan/slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md"
