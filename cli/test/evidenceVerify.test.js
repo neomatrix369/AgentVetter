@@ -322,7 +322,7 @@ test('given GitHub, AWS, live-key and password formats when maskSecrets then eac
   /**
    * Scenario: common credential formats in evidence text are replaced by placeholders.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * CONTRACT_SHAPE: bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given one line per credential format, each surrounded by plain text,
@@ -347,7 +347,7 @@ test('given a quoted multi-word api_key and password when maskSecrets then the w
   /**
    * Scenario: a quoted value with spaces is masked to its closing quote, not just its first word.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * CONTRACT_SHAPE: bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given an api_key and a password whose quoted values contain spaces,
@@ -370,7 +370,7 @@ test('given an unterminated quote with spaces when maskSecrets then the rest of 
   /**
    * Scenario: a password with no closing quote is masked to the end of its line.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * CONTRACT_SHAPE: bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a password whose opening quote never closes and whose value has spaces,
@@ -388,7 +388,7 @@ test('given an api_key value spanning a newline when maskSecrets then the whole 
   /**
    * Scenario: a quoted value that spans lines is masked in full, including its second line.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * CONTRACT_SHAPE: bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a quoted api_key whose value contains a newline,
@@ -406,7 +406,7 @@ test('given a key after a non-ASCII letter when maskSecrets then the key is mask
   /**
    * Scenario: word boundaries are ASCII-only, so a key after a non-ASCII letter is still masked.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * CONTRACT_SHAPE: bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a key immediately after a non-ASCII letter,
@@ -422,9 +422,9 @@ test('given a key after a non-ASCII letter when maskSecrets then the key is mask
 
 test('given a non-breaking space after a password label when maskSecrets then the quoted value is masked', () => {
   /**
-   * Scenario: Unicode whitespace after a label is matched the same way by the CLI and the sandbox.
+   * Scenario: Unicode whitespace after a label is matched by the CLI (sandbox counterpart in sandbox/tests/test_redact.py).
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * CONTRACT_SHAPE: bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a password label followed by a non-breaking space and a quoted value,
@@ -442,7 +442,7 @@ test('given a byte-order mark as the separator when maskSecrets then Bearer and 
   /**
    * Scenario: a zero-width no-break space counts as whitespace in both the CLI and the sandbox.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * CONTRACT_SHAPE: bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a Bearer token and a password separated by a byte-order mark,
@@ -458,7 +458,7 @@ test('given control and zero-width separators when maskSecrets then Bearer token
   /**
    * Scenario: NEL, unit-separator and zero-width-space characters separate a Bearer token as whitespace.
    * Slice: stored-evidence masking (PR #212 review follow-up).
-   * CONTRACT_SHAPE: bounded-change
+   * @contract-shape:pure-function
    * Outcome anchor: Stored evidence never carries raw secret-looking values
    *
    * Given a Bearer token separated by NEL, a unit separator, or a zero-width space,
@@ -469,4 +469,180 @@ test('given control and zero-width separators when maskSecrets then Bearer token
   assert.equal(maskSecrets('Bearer\u0085tok').text, 'Bearer [REDACTED]');
   assert.equal(maskSecrets('Bearer\u001ftok').text, 'Bearer [REDACTED]');
   assert.equal(maskSecrets('Bearer\u200btok').text, 'Bearer [REDACTED]');
+});
+
+test('given a JWT in any position when maskSecrets then the token is masked', () => {
+  /**
+   * Scenario: a JWT is masked wherever it appears in scanned text (sandbox counterpart in sandbox/tests/test_redact.py).
+   * Slice: 79 security hardening (GWT-62.1).
+   * @contract-shape:pure-function
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a JWT after nothing, after an equals sign, after a dash, and after an underscore,
+   * When maskSecrets runs,
+   * Then each token is replaced and the surrounding text is kept.
+   */
+  // -- Given / When / Then --
+  const jwt = 'eyJ' + 'hbGciOiJIUzI1NiJ9' + '.' + 'eyJzdWIiOiIxMjMifQ' + '.' + 'c2lnbmF0dXJlMTIz';
+  const cases = [
+    [jwt, '[REDACTED]'],
+    ['auth=' + jwt + ' end', 'auth=[REDACTED] end'],
+    ['x-auth-' + jwt, 'x-auth-[REDACTED]'],
+    ['jwt_' + jwt, 'jwt_[REDACTED]'],
+  ];
+  for (const [input, expected] of cases) {
+    assert.equal(maskSecrets(input).text, expected, input);
+  }
+});
+
+test('given connection URIs for every supported scheme when maskSecrets then each whole URI is masked', () => {
+  /**
+   * Scenario: connection strings with embedded credentials are masked in full (sandbox counterpart in sandbox/tests/test_redact.py).
+   * Slice: 79 security hardening (GWT-62.2).
+   * @contract-shape:pure-function
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given one connection string per supported scheme,
+   * When maskSecrets runs,
+   * Then each is replaced with the placeholder.
+   */
+  // -- Given / When / Then --
+  const uris = [
+    'postgresql://' + 'app:hunter' + '2@db.internal:5432/app',
+    'postgres://' + 'app:pw' + '@db/x',
+    'mysql://' + 'root:r00t' + '@127.0.0.1/shop',
+    'mariadb://' + 'u:p' + '@db/x',
+    'mongodb+srv://' + 'svc:pw' + '@cluster0.example.net/prod',
+    'redis://' + ':pw' + '@cache:6379/0',
+    'amqp://' + 'guest:g' + '@broker/vhost',
+  ];
+  for (const uri of uris) {
+    assert.equal(maskSecrets(`dsn=${uri} end`).text, 'dsn=[REDACTED] end', uri);
+  }
+});
+
+test('given service tokens in the amended formats when maskSecrets then each is masked', () => {
+  /**
+   * Scenario: service tokens in the amended formats are masked (fo1_ kept by operator decision); a labelled Netlify value keeps only its label name.
+   * Slice: 79 security hardening (GWT-62.3, amended).
+   * @contract-shape:pure-function
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given Cloudflare user, account and global tokens, Fly tokens, and a labelled Netlify token,
+   * When maskSecrets runs,
+   * Then each token is replaced and the Netlify label is normalised.
+   */
+  // -- Given / When / Then --
+  const cfBody = 'a1B2c3D4e5F6g7H8i9J0' + 'a1B2c3D4e5F6g7H8i9J0' + 'k1l2m3';
+  const netlify = 'abcdefghijklmnop' + '12345';
+  const cases = [
+    ['token cfut_' + cfBody + ' end', 'token [REDACTED] end'],
+    ['token cfat_' + cfBody + ' end', 'token [REDACTED] end'],
+    ['token cfk_' + cfBody + ' end', 'token [REDACTED] end'],
+    ['token FlyV1 fm2_AbCdEf0123456789XyZ end', 'token [REDACTED] end'],
+    ['token fo1_AbCdEf0123456789XyZ0123 end', 'token [REDACTED] end'],
+    ['deploy NETLIFY_AUTH_TOKEN=' + netlify + ' end', 'deploy netlify_token=[REDACTED] end'],
+    ['deploy DEPLOY_NETLIFY_AUTH_TOKEN=' + netlify + ' end', 'deploy DEPLOY_netlify_token=[REDACTED] end'],
+    ['tag X_fm2_AbCdEf0123456789XyZ end', 'tag X_[REDACTED] end'],
+    ['tag X_cfut_' + cfBody + ' end', 'tag X_[REDACTED] end'],
+  ];
+  for (const [input, expected] of cases) {
+    assert.equal(maskSecrets(input).text, expected, input);
+  }
+});
+
+test('given shapes outside the rules when maskSecrets then the text is unchanged', () => {
+  /**
+   * Scenario: hashes, release identifiers, short or legacy Cloudflare strings and unlabelled Netlify tokens are left unchanged.
+   * Slice: 79 security hardening (GWT-62.3 negatives, amended).
+   * @contract-shape:pure-function
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given text that resembles a token but matches no rule,
+   * When maskSecrets runs,
+   * Then the output equals the input.
+   */
+  // -- Given / When / Then --
+  const body = 'a1B2c3D4e5F6g7H8i9J0' + 'a1B2c3D4e5F6g7H8i9J0';
+  const cases = [
+    'commit 3f786850e387550fdab836ed7e6dc881de23001b imports pkg.sub.module',
+    'release v1.0-release-20241231 shipped',
+    't cfut_' + body.slice(0, 39) + ' e',
+    't ' + body + ' e',
+    'token abcdefghijklmnop12345 end',
+    'apiKey=abcdefghijk',
+    'paſsword=hunter2value',
+  ];
+  for (const text of cases) {
+    assert.equal(maskSecrets(text).text, text, text);
+  }
+});
+
+test('given tokens glued to text or joined by an underscore when maskSecrets then each token is masked', () => {
+  /**
+   * Scenario: GitHub, live-key and AWS tokens attached to a word, with or without an underscore, are still masked.
+   * Slice: 79 security hardening (GWT-62.3, underscore boundary).
+   * @contract-shape:pure-function
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given GitHub, live-key and AWS tokens glued to a word or joined by an underscore,
+   * When maskSecrets runs,
+   * Then each token is replaced with its placeholder.
+   */
+  // -- Given / When / Then --
+  const cases = [
+    ['tag X_ghp_' + 'a'.repeat(36) + ' end', 'tag X_[REDACTED_TOKEN] end'],
+    ['tag KEY_sk_live_' + 'a'.repeat(12) + ' end', 'tag KEY_[REDACTED_KEY] end'],
+    ['tag X_AKIA' + 'A'.repeat(16) + ' end', 'tag X_[REDACTED_TOKEN] end'],
+    ['tag ghp_' + 'a'.repeat(36) + '_end', 'tag [REDACTED_TOKEN]_end'],
+    ['tag AKIA' + 'A'.repeat(16) + '_x', 'tag [REDACTED_TOKEN]_x'],
+    ['tag tokenghp_' + 'a'.repeat(36) + ' end', 'tag token[REDACTED_TOKEN] end'],
+    ['tag keyAKIA' + 'A'.repeat(16) + ' end', 'tag key[REDACTED_TOKEN] end'],
+    ['tag xeyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.c2lnbmF0dXJlMTIz end', 'tag x[REDACTED] end'],
+    ['tag dbxpostgres://u:p@h/x end', 'tag dbx[REDACTED] end'],
+    ['tag postgresql+psycopg2://u:p@h/x end', 'tag [REDACTED] end'],
+  ];
+  for (const [input, expected] of cases) {
+    assert.equal(maskSecrets(input).text, expected, input);
+  }
+});
+
+test('given Unicode boundary and spacing cases when maskSecrets then results follow the pinned expectations', () => {
+  /**
+   * Scenario: non-ASCII letters and Unicode spaces are handled the same way in the CLI and the sandbox.
+   * Slice: 79 security hardening (review follow-up, parity).
+   * @contract-shape:pure-function
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a Netlify label after a non-ASCII letter and a URI and Fly token separated by non-breaking spaces,
+   * When maskSecrets runs,
+   * Then both outputs equal the pinned expectations.
+   */
+  // -- Given / When / Then --
+  const netlify = 'abcdefghijklmnop' + '12345';
+  assert.equal(maskSecrets('\u00e9NETLIFY_AUTH_TOKEN=' + netlify).text, '\u00e9netlify_token=[REDACTED]');
+  assert.equal(
+    maskSecrets('dsn=postgresql://app:pw@h/x\u00a0end FlyV1\u00a0fm2_AbCdEf0123456789XyZ').text,
+    'dsn=[REDACTED]\u00a0end [REDACTED]',
+  );
+});
+
+test('given an adversarial JWT-like run when maskSecrets then it finishes quickly', () => {
+  /**
+   * Scenario: a long run of JWT-like fragments is scanned within a bounded time (per-start cost is capped, so total cost is linear).
+   * Slice: 79 security hardening (review follow-up, JWT rule).
+   * @contract-shape:pure-function
+   * Outcome anchor: Stored evidence never carries raw secret-looking values
+   *
+   * Given a long run of eyJ- fragments with no dots,
+   * When maskSecrets runs,
+   * Then it finishes within two seconds.
+   */
+  // -- Given / When / Then --
+  const text = 'eyJ-'.repeat(5000);
+  const dotted = ('eyJ' + 'a'.repeat(50) + '.').repeat(400);
+  const started = performance.now();
+  maskSecrets(text);
+  maskSecrets(dotted);
+  assert.ok(performance.now() - started < 2000, 'redaction must stay within the bounded budget');
 });

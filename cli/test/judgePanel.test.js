@@ -16,6 +16,7 @@ import {
   allocateJudgeSlots,
   discoverJudgeModels,
   runJudgePanel,
+  persistPanelRun,
   runPanelForCandidate,
 } from '../src/judgePanel.js';
 import { UNTRUSTED_CHANNEL, UNTRUSTED_PREAMBLE } from '../src/evidenceVerify.js';
@@ -400,5 +401,102 @@ test('GWT-67.5: ADR-0016 runRoute behaviour unchanged when panel is enabled', as
       'panel must not insert/replace tiered_router findings');
     assert.equal(persistCalls.length, 1, 'panel persists via its own path');
     assert.notEqual(persistCalls[0].final_verdict, undefined);
+  });
+});
+
+/** Minimal chainable Supabase stub that records the rows each table receives. */
+function recordingSupabase() {
+  const inserted = {};
+  const chain = (result) => {
+    const c = { then: (res, rej) => Promise.resolve(result).then(res, rej) };
+    for (const m of ['select', 'eq', 'neq', 'in', 'delete']) c[m] = () => c;
+    c.single = () => Promise.resolve(result);
+    return c;
+  };
+  const supabase = {
+    inserted,
+    from: (table) => ({
+      insert: (row) => {
+        inserted[table] = row;
+        return chain(table === 'judge_panel_runs' ? { data: { id: 'run-row' }, error: null } : { error: null });
+      },
+      select: () => chain({ data: [], error: null }),
+      delete: () => chain({ error: null }),
+    }),
+  };
+  return supabase;
+}
+
+test('slice 79: judge text is stored with secret-looking values masked', async () => {
+  /**
+   * Scenario: a judge that quotes a scanned token must not store the raw token.
+   * Slice: 79 — judge output masking (CHANGELOG: stored evidence is always masked).
+   *
+   * Given judges whose reasons quote a GitHub-style token,
+   * When the panel run is persisted,
+   * Then no stored judge or run row contains the raw token, and masked placeholders appear.
+   */
+  await withSieEnv(async () => {
+    // -- Given --
+    const token = 'ghp_' + 'a'.repeat(36);
+    const callChatApiFn = async () => answered('true_positive', 0.9, 'quoted ' + token);
+    const supabase = recordingSupabase();
+
+    // -- When --
+    const run = await runPanelForCandidate(CANDIDATE, {
+      listModelsFn: async () => ([{ id: 'gen-4b', kind: 'generate' }]),
+      callChatApiFn,
+    });
+    await persistPanelRun(supabase, run);
+
+    // -- Then --
+    const stored = JSON.stringify(supabase.inserted);
+    assert.equal(stored.includes(token), false, 'raw token must not reach any stored row');
+    assert.ok(stored.includes('[REDACTED_TOKEN]'), 'masked placeholder must be stored');
+  });
+});
+
+test('slice 79: every judge text field is masked in stored rows and outbound prompts', async () => {
+  /**
+   * Scenario: a token in the finding message, analysis, a judge error and a final reason never leaves unmasked.
+   * Slice: 79 — GWT-62.6 (judge text masking).
+   *
+   * Given a candidate and judge errors that all quote a GitHub-style token,
+   * When the panel runs and persists,
+   * Then no outbound prompt and no stored row contains the raw token.
+   */
+  await withSieEnv(async () => {
+    // -- Given --
+    const token = 'ghp_' + 'b'.repeat(36);
+    const candidate = {
+      ...CANDIDATE,
+      analysis: 'analysis quotes ' + token,
+      finding: { ...CANDIDATE.finding, message: 'message quotes ' + token },
+    };
+    const outbound = [];
+    let answeredOnce = false;
+    const callChatApiFn = async (_base, _key, _model, systemPrompt, userContent) => {
+      outbound.push(userContent);
+      if (systemPrompt.includes('final security judge')) {
+        return answered('true_positive', 0.9, 'final quotes ' + token);
+      }
+      if (!answeredOnce) {
+        answeredOnce = true;
+        return answered('true_positive', 0.9, 'judge quotes ' + token);
+      }
+      throw new Error('judge failed on ' + token);
+    };
+    const supabase = recordingSupabase();
+
+    // -- When --
+    const run = await runPanelForCandidate(candidate, {
+      listModelsFn: async () => ([{ id: 'gen-4b', kind: 'generate' }]),
+      callChatApiFn,
+    });
+    await persistPanelRun(supabase, run);
+
+    // -- Then --
+    assert.equal(outbound.some((text) => text.includes(token)), false, 'outbound prompts must be masked');
+    assert.equal(JSON.stringify(supabase.inserted).includes(token), false, 'stored rows must be masked');
   });
 });

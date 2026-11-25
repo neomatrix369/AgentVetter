@@ -1,0 +1,136 @@
+{
+  "slice": "slice-79-security-hardening",
+  "date": "2026-11-24",
+  "branch": "slice/79-security-hardening",
+  "commit": "c127b5b",
+  "gwt": "GWT-62.1–62.5 (Monk integration security audit 2026-11-23); GWT-62.3 amended 2026-11-24 to documented Cloudflare prefixes",
+  "commands": [
+    {
+      "cmd": "uv run pytest sandbox/tests --cov=sandbox",
+      "result": "403 passed (consolidated parametrised cases); coverage gate met",
+      "commit": "0ab6b86"
+    },
+    {
+      "cmd": "cd cli && npm test",
+      "result": "240 passed, 0 failed",
+      "commit": "0ab6b86"
+    },
+    {
+      "cmd": "cd prototypes/dc-dashboard && npm run test:coverage",
+      "result": "424 passed, 0 failed (dashboard unchanged vs main; live smoke passes against cloud Supabase)"
+    },
+    {
+      "cmd": "ruff check / ruff format --check sandbox/redact.py sandbox/tests/test_redact.py",
+      "result": "clean"
+    },
+    {
+      "cmd": "gitleaks detect --no-git --config .gitleaks.toml",
+      "result": "exit 0 (.omc/ allowlisted by operator decision)"
+    },
+    {
+      "cmd": "RED check for JWT boundary (previous regex acf18c3 vs current 9c41d33)",
+      "result": "previous boundary leaked x-auth-<jwt> and jwt_<jwt>; current masks both. Covered by new dash/underscore tests in both suites."
+    },
+    {
+      "cmd": "file:// DevTools check on AgentVetter.dc.html (headless Chromium)",
+      "result": "0 CSP violations. Second clause probed in a separate entry below."
+    },
+    {
+      "cmd": "./scripts/setup-supabase.sh (no --force), cloud project",
+      "result": "exit 0, {\"status\":\"ready\"} (no-op)"
+    },
+    {
+      "cmd": "WebFetch Cloudflare token-format docs (2026-11-24)",
+      "result": "cfk_/cfut_/cfat_ each followed by 40 characters and a checksum (checksum length not stated); legacy tokens unprefixed (Global key 37-45 hex; user/account 40 alphanumeric). No v1.0- format."
+    },
+    {
+      "cmd": "WebFetch Fly.io token docs (2026-11-24)",
+      "result": "Only fm2_ documented (as 'FlyV1 fm2_...'). fo1_, fm1a_, fm1r_ NOT documented."
+    },
+    {
+      "cmd": "playwright csp-probe: file:// page fetch to Supabase origin (GWT-62.4 second clause)",
+      "result": "fetch reached the server: HTTP 401 (no API key). No CSP refusal logged. Clause met."
+    },
+    {
+      "cmd": "env -i HOME PATH LANG ./scripts/setup-modal.sh --non-interactive (clean-env rerun)",
+      "result": "exit 0; secrets synced; agentvetter-scan redeployed. CAVEAT: python-dotenv was installed into the Modal CLI tool env earlier (no other changes); the tool env is not pristine and env -i does not reset it. Needs operator decision."
+    },
+    {
+      "cmd": "JWT rule timing at 1 MB (adversarial)",
+      "result": "Linear in input length on a 1 MB-class adversarial dash-run, with segments capped at 2048. Measured Python: 100k chars 0.026 s, 200k chars 0.051 s. JS: 1 MB 2.70 s (earlier run). Operator accepted the cost (DECISIONS 2026-11-24)."
+    },
+    {
+      "cmd": "uv run pytest sandbox/tests; cd cli && npm test (after underscore-boundary and ASCII-parity fix)",
+      "result": "412 passed (sandbox); 241 passed, 0 failed (CLI). Ruff check and format clean on changed Python files.",
+      "commit": "c002d2f"
+    },
+    {
+      "cmd": "uv run pytest sandbox/tests; cd cli && npm test (after trailing-boundary and judge masking fix)",
+      "result": "415 passed (sandbox); 241 passed, 0 failed (CLI). Ruff clean. markdownlint v0.43.0 clean. Probes: ghp_<36>_end and AKIA<16>_x masked on both sides.",
+      "commit": "7d36ce7"
+    },
+    {
+      "cmd": "uv run pytest sandbox/tests; cd cli && npm test (after fail-open and judge text fix)",
+      "result": "417 passed (sandbox); 241 passed, 0 failed (CLI). Ruff clean. Probes: tokenghp_<36> and keyAKIA<16> masked on both sides; sk- keeps its leading boundary by decision.",
+      "commit": "effc94b"
+    },
+    {
+      "cmd": "uv run pytest sandbox/tests; cd cli && npm test (at 2a25385)",
+      "result": "417 passed (sandbox); 242 passed, 0 failed (CLI). Ruff clean. markdownlint v0.43.0 clean.",
+      "commit": "2a25385"
+    },
+    {
+      "cmd": "cd cli && npm test (GWT-62.6 all-fields test; removed masking to confirm RED, then restored)",
+      "result": "243 passed, 0 failed; RED with masking removed (1 fail).",
+      "commit": "7b9e7bf"
+    },
+    {
+      "cmd": "uv run pytest sandbox/tests; cd cli && npm test (after glued JWT/URI fix)",
+      "result": "419 passed (sandbox); 243 passed, 0 failed (CLI). Glued xeyJ... and dbxpostgres://... masked on both sides. Timing 200k chars: 0.032 s Python, 0.002 s JS.",
+      "commit": "c127b5b"
+    }
+  ],
+  "coverage_by_gwt": {
+    "GWT-62.1 JWT": "PASS: tests, redact_row write-path test, dash/underscore boundary fix with RED evidence (9c41d33); segment length capped at 2048 for linear scan; glued JWT (xeyJ...) masked (c127b5b tests in both suites)",
+    "GWT-62.2 DB URIs": "PASS: postgres, mysql, mongodb+srv, mariadb, redis, amqp; glued (dbxpostgres://...) and driver-suffix (postgresql+psycopg2://...) covered in both suites",
+    "GWT-62.3 service tokens (amended)": "PASS for documented forms: cfut_/cfat_/cfk_ (40+ chars, verified against docs), Fly fm2_ (documented), labelled Netlify. Negatives PASS: 39-char, legacy unprefixed Cloudflare, unlabelled Netlify, v1.0- release identifier. OPEN: Fly fo1_ kept though undocumented; operator decision.",
+    "GWT-62.4 file:// no CSP": "PASS: 0 CSP violations in headless Chromium (earlier run) and in two independent browser runs on 2026-11-25 (Puppeteer Chrome 158; Playwright Chromium); no CSP meta tag. Supabase reach: earlier cloud probe HTTP 401 (reached server); 2026-11-25 probe hit local proxy, refused at network layer, not CSP. CAVEAT (2026-11-25 recheck, Chromium 131, file://): 0 CSP violations, 0 page errors, navigation completes. Under file:// the dashboard's kit modules (agentvetter-status.js, agentvetter-workflow-stepper.js, agentvetter-live.js) and its fetch do not load, and an SVG template placeholder ({{ selectedView }}) is unfilled. These are file:// limitations and pre-existing; they are not CSP violations and this slice does not change the dashboard. The local dashboard is not fully functional from file:// (separate work). Second clause re-probed 2026-11-25: fetch from the file:// dashboard to the cloud Supabase origin returned HTTP 401 (request reached the server), 0 CSP messages.",
+    "GWT-62.5 setup scripts": "PARTIAL: Supabase exit 0 (ready, no-op). Modal exit 0 in env -i, but the Modal tool env was not pristine (python-dotenv installed manually). Not a clean PASS until the operator accepts or reruns on a fresh tool env.",
+    "GWT-62.6 judge text": "PASS: judge reason, raw response, error message, finding message, analysis, escalation and final reason masked (judgePanel.js). cli/test/judgePanel.test.js asserts no raw token in any outbound prompt or stored row; the test fails when masking is removed."
+  },
+  "reviews": {
+    "nw-software-crafter-reviewer": "Round 2 CHANGES REQUESTED. Addressed: JWT boundary (9c41d33, RED evidence), cfat/cfk and negatives. Open: test count 15 Python / 11 JS vs the 2x-GWT budget of 10 (consolidate or justify); no execution log for earlier RED batches.",
+    "nw-acceptance-designer-reviewer": "Round 2 CHANGES REQUESTED. Addressed: contract-shape tags are @contract-shape:pure-function (operator form, DECISIONS 2026-11-24); stale scenario names renamed; spec provenance recorded. Open by design: GWT-62.4 second clause, GWT-62.5 clean environment.",
+    "nw-solution-architect-reviewer": "APPROVED with non-blocking notes (parity by convention only; llm-usage-tracking.md third redaction design; gitleaks allowlist breadth).",
+    "nw-ddd-architect-reviewer": "APPROVED: no schema or domain change.",
+    "stale_note": "Reviews on e3d6889 (architecture, software craft, acceptance) returned NOT APPROVED; findings addressed in the commits that follow. Re-review pending."
+  },
+  "open_items": [
+    "Reviewer re-review pending on the head that contains these fixes (architecture, software craft, acceptance).",
+    "Contract-shape tag: DECIDED by operator, @contract-shape: form (DECISIONS 2026-11-24).",
+    "RED evidence: DECIDED by operator, gap accepted and recorded (DECISIONS 2026-11-24).",
+    "JWT segment cap 2048: DECIDED by operator, residual risk accepted (DECISIONS 2026-11-24).",
+    "JWT timing: DECIDED by operator, 2.70 s JS at 1 MB accepted (DECISIONS 2026-11-24).",
+    "Historical backfill: DECIDED by operator, not backfilled, recorded (DECISIONS 2026-11-24).",
+    "GWT-62.5 Modal tool env: DECIDED by operator, accepted with caveat (DECISIONS 2026-11-24).",
+    "Allowlist: .omc/ exclusion is unanchored by operator decision; tripwire test added.",
+    "/verify-slice (user-invoked) is pending after reviewer approvals.",
+    "ASCII-only secret matching and sk- leading boundary: pending operator confirmation (DECISIONS 2026-11-24).",
+    "Glued JWT and DB URI: FIXED in ab2e4ed (DECISIONS 2026-11-24 closing row).",
+    "ASCII-only secret matching: PARKED by operator for the next iteration (DECISIONS 2026-11-24).",
+    "GWT-62.4 DevTools check: closed by operator on two browser runs (DECISIONS 2026-11-25)."
+  ],
+  "verdict": "BLOCKED",
+  "spec_path": "docs/plan/slices/15-O-monk-kit-live-packaging/slice-79-security-hardening.md",
+  "coverage_pct": 95.5,
+  "coverage_target": 95,
+  "branch_pct": 92.4,
+  "branch_target": 95,
+  "branch_scope_note": "Repository-wide sandbox branch coverage (756/818). sandbox/redact.py itself is 100% line and branch (6/6). The shortfall is outside slice 79's files.",
+  "complexity_tool": "xenon",
+  "complexity_grade": "A",
+  "complexity_passed": true,
+  "static_analysis": "ruff check sandbox: clean",
+  "security_scan": "scripts/security-scan.sh exits 0: Semgrep, OSV and Trivy pass; TruffleHog --only-verified re-run is clean (DECISIONS 2026-11-24).",
+  "branch_waiver": "Operator-approved waiver of gate 3 for slice 79; repo-wide branch coverage 92.42% is pre-existing on main (DECISIONS 2026-11-24)."
+}

@@ -26,7 +26,7 @@
 - CSP meta tag in source HTML (intentionally NOT added — breaks `file://` local opens)
 
 ## Output contract
-- **Baseline**: `sandbox/redact.py` `_SECRET_RULES` has ~8 patterns; JWT/DB URI/non-prefix tokens not covered
+- **Baseline**: `sandbox/redact.py` `_SECRET_RULES` has ~8 patterns; JWT/DB URI/prefixed service tokens not covered
 - `_SECRET_RULES` extended with: JWT pattern, DB URI prefixes, non-prefix token patterns
 - `python3 -c "import sandbox.redact"` runs clean locally
 - `prototypes/dc-dashboard/AgentVetter.dc.html` opens via `file://` without CSP errors (no meta CSP added)
@@ -36,10 +36,10 @@
 - Slice name: `slice-79-security-hardening`
 - Files: `sandbox/redact.py`
 - Exit criteria: new patterns added; local compat checklist passes; existing tests green
-- Commit pattern: `fix(slice-79): extend redact rules for JWT, DB URIs, non-prefix tokens`
+- Commit pattern: `fix(slice-79): extend redact rules for JWT, DB URIs, prefixed service tokens`
 
 ## Branch
-`slice/62-security-hardening`
+`slice/79-security-hardening`
 
 ## Spec (GWT)
 
@@ -47,17 +47,23 @@
 **Given** a scan finding whose `snippet` contains a JWT (3-segment base64url: `xxxxx.yyyyy.zzzzz`)
 **When** `redact_secrets(text)` is called
 **Then** the JWT is replaced with `[REDACTED]`
+**And** a JWT glued to a word (for example `xeyJ...`) is replaced with `[REDACTED]` after the word
 **And** the redacted text is written to `findings.snippet`
 
 ### GWT-62.2 — DB connection strings redacted
 **Given** a scan finding containing `postgresql://user:pass@host/db` or `mongodb+srv://...` or `mysql://...`
 **When** `redact_secrets(text)` is called
 **Then** the URI (including embedded credentials) is replaced with `[REDACTED]`
+**And** a URI glued to a word (for example `dbxpostgres://...`) or with a driver suffix (for example `postgresql+psycopg2://...`) is replaced with `[REDACTED]`
 
-### GWT-62.3 — Non-prefix service tokens redacted
-**Given** a scan finding containing a Cloudflare token (`v1.0-...`), Fly.io token, or Netlify token
+### GWT-62.3 — Service tokens redacted (amended 2026-11-24)
+**Given** a scan finding containing a Cloudflare API token in a documented prefixed format (`cfut_`, `cfat_` or `cfk_` followed by 40+ characters), a Fly.io token (`fo1_` or `fm2_`, optionally preceded by `FlyV1`), or a Netlify token written after a `NETLIFY_AUTH_TOKEN=`-style label
 **When** `redact_secrets(text)` is called
-**Then** the token is replaced with `[REDACTED]`
+**Then** the token is replaced with `[REDACTED]` (Netlify: `netlify_token=[REDACTED]`)
+**And** unlabelled Netlify tokens and legacy unprefixed Cloudflare tokens are **not** masked: neither has a distinguishing shape, and a bare 40-character pattern would hit git commit SHAs
+**And** a release identifier such as `v1.0-release-20241231` is left unchanged
+
+**Amendment note (2026-11-24):** the original wording used `v1.0-...` as the Cloudflare shape, which is not a Cloudflare format. Re-fetched 2026-11-24 from developers.cloudflare.com/fundamentals/api/get-started/token-formats/: user `cfut_`, account `cfat_` and global key `cfk_`, each followed by 40 characters and a checksum (checksum length not stated); legacy tokens are unprefixed. Fly: re-fetched docs.fly.io/security/tokens: only `fm2_` is documented (as `FlyV1 fm2_...`); `fo1_`, `fm1a_` and `fm1r_` are not documented. The `fo1_` alternative is kept by operator decision (2026-11-24): undocumented by Fly, so it can only over-mask.
 
 ### GWT-62.4 — Local `file://` dashboard unaffected
 **Given** `prototypes/dc-dashboard/AgentVetter.dc.html` opened via `file://` protocol
@@ -70,6 +76,12 @@
 **When** run in a clean environment
 **Then** both complete without errors introduced by slice 79 changes
 
+### GWT-62.6 — Judge panel text masked before storage and outbound calls
+**Given** a judge panel run whose model output or scanner text quotes a secret-looking value
+**When** the run is persisted or sent to the SIE endpoint
+**Then** the judge reason, raw response, error message, finding message, analysis and escalation fields are masked
+**And** `file_path` and `location` are left unmasked (paths, not scanned text)
+
 ## Local compatibility checklist [GATE]
 - [ ] `python3 -c "import sandbox.redact"` exits 0
 - [ ] `prototypes/dc-dashboard/AgentVetter.dc.html` opens via `file://`; no CSP errors in DevTools
@@ -77,14 +89,22 @@
 - [ ] Existing redact tests pass (or are added for new patterns)
 
 ## Before-Checks [GATE]
-- [ ] Branch `slice/62-security-hardening` created
+- [ ] Branch `slice/79-security-hardening` created
 - [ ] Slice 58 ✅ on `main` (sandbox/ exists)
 
 ## After-Checks [GATE]
 - [ ] `fix(slice-79): ...` commit on branch
 - [ ] All GWT-62.1–62.5 have test coverage or manual evidence
 - [ ] Local compatibility checklist above all ticked
-- [ ] No new patterns accidentally break existing redaction of AWS/GCP/GitHub tokens
+- [ ] No new patterns accidentally break existing redaction of AWS and GitHub tokens
+
+### Closing Gates
+- [ ] `nw-gate-evidence-validator` passes for `docs/plan/gate-evidence/slice-79.json` (currently `verdict: BLOCKED`)
+- [ ] `/verify-slice` returns COMPLETE (required final gate)
+- [ ] Code review: `nw-software-crafter-reviewer` APPROVED
+- [ ] GWT-62.4 DevTools check on `file://` run by operator (CSP violations: 0 observed in headless Chromium)
+- [ ] GWT-62.5 live dry-run of `scripts/setup-supabase.sh` and `scripts/setup-modal.sh` run by operator (needs credentials)
+- [ ] Dashboard live smoke passes on a networked machine (or the exclusion is recorded in DECISIONS.md)
 
 ## Gate Status
 📋 PLANNED

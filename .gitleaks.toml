@@ -21,6 +21,8 @@ paths = [
   '''\.pytest_cache/''',
   '''\.ruff_cache/''',
   '''\.gate-cache/''',
+  # Local Claude/OMC session state (git-ignored, never committed)
+  '''\.omc/''',
   # Intentional hardcoded secrets / vuln targets for scanner smoke tests
   '''^fixtures/''',
   '''fixtures/''',

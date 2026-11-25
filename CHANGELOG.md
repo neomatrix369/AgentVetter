@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Secret-like values are masked before finding snippets, scanner console output and
   details are stored. Previously they were masked only when printed by the CLI.
   Existing rows are not backfilled.
+- Masking also covers JWTs, database connection strings (postgres, mysql, mariadb,
+  mongodb, redis, amqp), Cloudflare tokens with the `cfut_`, `cfat_` or `cfk_` prefix, Fly.io
+  tokens, and Netlify tokens written after a `NETLIFY_AUTH_TOKEN`-style label, in both the
+  sandbox and the CLI. Unlabelled Netlify tokens and legacy unprefixed Cloudflare tokens
+  are not masked.
+- Stored evidence is always masked. `--reveal-secrets` only changes what the CLI prints.
+- GitHub, live-key and AWS tokens attached to a word by an underscore (for example
+  `X_ghp_…`) are now masked in both the sandbox and the CLI. Secret-rule matching is
+  ASCII-only in both, so look-alike Unicode letters are not masked.
 
 ### Added
 - Monk Kit PoC (slice 58, ADR-0001): `MANIFEST`, `common.yaml`, `latest.yaml`,
