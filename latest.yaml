@@ -29,7 +29,7 @@ dashboard:
   depends:
     wait-for:
       runnables:
-        - agentvetter/supabase
+        - agentvetter/bootstrap
       timeout: 900
 
 prod:

@@ -25,14 +25,14 @@ supabase-v1:
       protocol: custom
 
 # Cluster bootstrap: apply baked schema via Management API,
-# then run Modal setup from scripts baked into agentvetter-bootstrap:latest.
+# then run Modal setup from scripts baked into agentvetter-bootstrap:v1.0.0.
 # No blob mounts — paths/blobs hang containers before bash starts (RestartCount=0).
 bootstrap-v1:
   defines: runnable
   containers:
     bootstrap:
       # Built from bootstrap/Dockerfile (scripts + sandbox + modal CLI).
-      image: agentvetter-bootstrap:latest
+      image: agentvetter-bootstrap:v1.0.0
       workdir: /app
       # NOTE: Monk executes `bash:` under /bin/sh (dash) — PRO-852. Keep POSIX only
       # (no `pipefail`, no `[[ ]]`) or the script dies on line 1.
@@ -432,7 +432,7 @@ dashboard-v1:
   depends:
     wait-for:
       runnables:
-        - agentvetter/supabase-v1
+        - agentvetter/bootstrap-v1
       timeout: 900
   permitted-secrets:
     supabase-anon-key: true

@@ -1,0 +1,39 @@
+{
+  "slice": 58,
+  "date": "2026-11-25",
+  "branch": "slice/58-land-poc-monk-kit",
+  "verdict": "ON_BRANCH",
+  "phase": "15-O",
+  "moscow": "Must",
+  "before_checks": "all green — branch created from main (rebased); PoC reviewed; ADR-0001 re-read; no prior session recovery needed",
+  "after_checks": [
+    "GWT-58.1: MANIFEST loads common.yaml + v1.0.0.yaml + latest.yaml; namespace agentvetter — PASS",
+    "GWT-58.2: supabase-v1 defines supabase/project (not in-cluster Postgres); bootstrap-v1 and dashboard-v1 define runnable with nginx — PASS",
+    "GWT-58.3: Tier-1/2/3 secrets declared in MANIFEST; entity-generated keys absent from SECRET lines — PASS",
+    "GWT-58.4: Dockerfile uses node:22-bookworm (digest-pinned); schema baked via COPY; scripts/ and sandbox/ baked; certbot installed; image tag pinned to v1.0.0 — PASS",
+    "GWT-58.4b: test -s /app/db/schema.sql fails build on empty schema — PASS",
+    "GWT-58.5: STATUS.md states ADR-0001 is Proposed; dashboard-v1 depends on bootstrap-v1; latest.yaml dashboard depends on bootstrap — PASS",
+    "contract tests: 34 passed, 0 failed (uv run pytest sandbox/tests/test_monk_kit_contract.py)"
+  ],
+  "commands": [
+    {"cmd": "uv run pytest sandbox/tests/test_monk_kit_contract.py -v --tb=short", "result": "34 passed in 0.05s"},
+    {"cmd": "grep 'IMAGE agentvetter-bootstrap' MANIFEST", "result": "IMAGE agentvetter-bootstrap:v1.0.0 agentvetter/bootstrap,agentvetter/bootstrap-v1 . bootstrap/Dockerfile"},
+    {"cmd": "grep 'image:' v1.0.0.yaml | grep agentvetter-bootstrap", "result": "image: agentvetter-bootstrap:v1.0.0"},
+    {"cmd": "grep -A5 'dashboard-v1:' v1.0.0.yaml | grep -A3 'depends:'", "result": "wait-for runnables: - agentvetter/bootstrap-v1"},
+    {"cmd": "grep 'certbot' bootstrap/Dockerfile", "result": "    certbot \\"},
+    {"cmd": "grep -n 'monk\\|proposed' docs/STATUS.md | head -5", "result": "STATUS.md describes Monk Kit as Proposed (ADR-0001)"}
+  ],
+  "gaps_flagged": [
+    "TLS cert provisioning: certbot installed in bootstrap image; actual certbot invocation (certbot certonly ...) deferred to slice 59 deploy proof — O0 blocks VERIFIED claim",
+    "monk validate MANIFEST: cannot run locally without Monk runtime; validation is a slice 59 gate",
+    "docs/user-guide/monk-deploy.md versioning contract: image tag versioning documentation deferred to slice 61 per spec"
+  ],
+  "deferred_items": [
+    "Monk registry publish (ADR out-of-scope)",
+    "Capsules / CI-generated pipelines (ADR out-of-scope)",
+    "docs/user-guide/monk-deploy.md (slice 61)"
+  ],
+  "review": "PENDING — nw-software-crafter-reviewer + nw-platform-architect-reviewer",
+  "pr": null,
+  "coverage_note": "Kit files are YAML/Dockerfile (no Python module coverage applies); contract tests add 0 sandbox lines but are design-by-contract checks per slice spec TDD guidance"
+}
