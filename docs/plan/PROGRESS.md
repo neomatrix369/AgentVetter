@@ -96,7 +96,7 @@ Wave O slices **58–61** are reserved on [PR #135](https://github.com/neomatrix
 | — | L | 52 | ID Lineage Cross-Reads + UI Side-by-Side | Could | 📋 PLANNED |
 | — | M | **53** | **LLM Usage Tracking + UI Cost Surfacing** | Should | 📋 PLANNED · Wave **13-M** · design: [`docs/design/llm-usage-tracking.md`](../design/llm-usage-tracking.md) · branch docs: `docs/53-llm-usage-tracking-plan` |
 | — | O | **O0** | **Wave O Governance (ADR-0001 Accept + open Qs)** | Must | 📋 PLANNED · [phase-O0-governance](slices/15-O-monk-kit-live-packaging/phase-O0-governance.md) · blocks VERIFIED/merge, not 58 prototyping |
-| — | O | **58** | **Land PoC Monk Kit + Bootstrap Image** | Must | 📋 PLANNED · Wave **15-O** · ADR-0001 · plan branch `docs/monk-kit-wave-o` |
+| — | O | **58** | **Land PoC Monk Kit + Bootstrap Image** | Must | ✅ PASSED · Wave **15-O** · ADR-0001 · [#217](https://github.com/neomatrix369/AgentVetter/pull/217) · branch `slice/58-land-poc-monk-kit` · 34/34 tests · Gate 4 APPROVED |
 | — | O | **59** | **MVL-Complete Monk Deploy Proof (Tier 1)** | Must | 📋 PLANNED · depends 58 · Walking Skeleton |
 | — | O | **60** | **Tier 2+3 Plumbing + Coverage Honesty** | Should | 📋 PLANNED · depends 59 |
 | — | O | **61** | **Monk Docs Coexistence + Operator Honesty** | Should | 📋 PLANNED · depends 58 (VERIFIED wording waits on 59) |
@@ -237,7 +237,7 @@ Wave H product stubs live under `slices/08-H-frontline-agent-hooks/`. Governance
 | # | Slice | MoSCoW | Status | Started | Completed | Est. time |
 |---|-------|--------|--------|---------|-----------|-----------|
 | O0 | [phase-O0-governance](slices/15-O-monk-kit-live-packaging/phase-O0-governance.md) | Must | 📋 PLANNED | — | — | ~25 min |
-| 58 | [slice-58-land-poc-monk-kit](slices/15-O-monk-kit-live-packaging/slice-58-land-poc-monk-kit.md) | Must | 📋 PLANNED | — | — | ~50 min |
+| 58 | [slice-58-land-poc-monk-kit](slices/15-O-monk-kit-live-packaging/slice-58-land-poc-monk-kit.md) | Must | ✅ PASSED | 2026-11-25 | 2026-11-26 | ~50 min |
 | 59 | [slice-59-mvl-monk-deploy-proof](slices/15-O-monk-kit-live-packaging/slice-59-mvl-monk-deploy-proof.md) | Must | 📋 PLANNED | — | — | ~50 min [Walking Skeleton] |
 | 60 | [slice-60-tier2-tier3-coverage-honesty](slices/15-O-monk-kit-live-packaging/slice-60-tier2-tier3-coverage-honesty.md) | Should | 📋 PLANNED | — | — | ~25 min |
 | 61 | [slice-61-monk-docs-coexistence](slices/15-O-monk-kit-live-packaging/slice-61-monk-docs-coexistence.md) | Should | 📋 PLANNED | — | — | ~25 min |
