@@ -38,7 +38,7 @@ SECRET model-studio-model
 SECRET ossprey-api-key
 
 # Bootstrap image: Node + python/modal CLI + baked scripts/sandbox (no blob mounts).
-IMAGE agentvetter-bootstrap:latest agentvetter/bootstrap,agentvetter/bootstrap-v1 . bootstrap/Dockerfile
+IMAGE agentvetter-bootstrap:v1.0.0 agentvetter/bootstrap,agentvetter/bootstrap-v1 . bootstrap/Dockerfile
 
 # Static Live dashboard assets (schema/Modal no longer need cli/db/scripts blobs).
 BLOBS dashboard:prototypes/dc-dashboard

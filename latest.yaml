@@ -27,9 +27,11 @@ dashboard:
       runnable: agentvetter/supabase
       service: data
   depends:
+    # Startup order: supabase → bootstrap → dashboard.
+    # bootstrap applies the baked schema to Supabase before dashboard serves traffic.
     wait-for:
       runnables:
-        - agentvetter/supabase
+        - agentvetter/bootstrap
       timeout: 900
 
 prod:

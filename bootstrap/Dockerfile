@@ -8,6 +8,7 @@ RUN apt-get update \
     python3 \
     python3-pip \
     python3-venv \
+    certbot \
   && rm -rf /var/lib/apt/lists/*
 
 # Modal CLI for non-interactive token auth + secret sync + deploy.
