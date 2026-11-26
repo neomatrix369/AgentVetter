@@ -24,9 +24,15 @@
     {"cmd": "grep -n 'monk\\|proposed' docs/STATUS.md | head -5", "result": "STATUS.md describes Monk Kit as Proposed (ADR-0001)"}
   ],
   "gaps_flagged": [
-    "TLS cert provisioning: certbot installed in bootstrap image; actual certbot invocation (certbot certonly ...) deferred to slice 59 deploy proof — O0 blocks VERIFIED claim",
+    "TLS cert provisioning: certbot installed in bootstrap image; actual certbot certonly invocation deferred to slice 59 deploy proof — O0 blocks VERIFIED claim",
     "monk validate MANIFEST: cannot run locally without Monk runtime; validation is a slice 59 gate",
-    "docs/user-guide/monk-deploy.md versioning contract: image tag versioning documentation deferred to slice 61 per spec"
+    "docs/user-guide/monk-deploy.md versioning contract: image tag versioning documentation deferred to slice 61 per spec",
+    "Rollback strategy (platform-rev finding #1): failure detection criteria, automatic triggers, manual procedure — deliberate deferral; ADR-0001 Proposed / PoC Kit stage; production rollback spec belongs in slice 59 deployment runbook",
+    "certbot in Node base image (platform-rev finding #3): intentional for slice 58 PoC — certbot must be co-located with bootstrap scripts for slice 59 TLS proof; sidecar/init-container refactor is a slice 59+ design decision after TLS proof succeeds",
+    "CI/CD image build/push (platform-rev finding #4): agentvetter-bootstrap:v1.0.0 image publish step deferred to slice 59 ops setup; slice 58 establishes the manifest shape only",
+    "SBOM generation (platform-rev finding #5): container SBOM (syft/trivy) deferred to slice 61 per security hardening plan",
+    "Health checks/readiness probes (platform-rev finding #6): dashboard-v1 liveness+readiness probes deferred to slice 59 deployment spec; PoC Kit does not require Monk probe config",
+    "Dependency chain documentation (platform-rev finding #2): comments added to v1.0.0.yaml and latest.yaml clarifying supabase-v1 → bootstrap-v1 → dashboard-v1 startup order — RESOLVED in this commit"
   ],
   "deferred_items": [
     "Monk registry publish (ADR out-of-scope)",

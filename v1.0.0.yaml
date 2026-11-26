@@ -430,6 +430,10 @@ dashboard-v1:
       runnable: agentvetter/supabase-v1
       service: data
   depends:
+    # Startup order: supabase-v1 → bootstrap-v1 → dashboard-v1.
+    # bootstrap-v1 applies the baked schema to supabase-v1 via the Management API
+    # and writes /tmp/agentvetter-bootstrap-ready; dashboard must wait for schema
+    # to be in place before nginx serves the Live UI.
     wait-for:
       runnables:
         - agentvetter/bootstrap-v1
